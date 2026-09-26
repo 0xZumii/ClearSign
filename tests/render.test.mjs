@@ -47,25 +47,33 @@ class FakeEl {
 }
 
 const ids = [
-  "rpc-url", "rpc-apply", "rpc-status", "address", "inspect",
-  "exp-name", "exp-version", "contract-out", "payload", "signature",
-  "check-payload", "check-onchain", "check-spenders", "check-liveness", "payload-out",
-  "sample-drain", "sample-safe", "open-trigger", "close-trigger", "trigger-note",
+  // check view
+  "payload", "signature", "check-payload", "clear-payload",
+  "check-onchain", "check-spenders", "check-liveness",
+  "payload-out", "rpc-url", "rpc-apply", "rpc-status",
+  "address", "exp-name", "exp-version", "inspect", "contract-out",
+  // learn view
+  "sample-drain", "sample-safe",
+  // test view
+  "wallet-status", "connect", "wallet-picker", "test-payload",
+  "sign", "copy-payload", "send-to-check", "test-out",
 ];
 
 function makeDom() {
   const els = Object.fromEntries(ids.map((id) => [id, new FakeEl(id)]));
-  const tabs = ["contract", "payload"].map((name) => {
-    const el = new FakeEl(`tab-${name}`);
-    el.dataset.tab = name;
+  // The page now has three views and a header nav, not a tab strip.
+  const views = ["check", "learn", "test"].map((name) => new FakeEl(`view-${name}`));
+  const navs = ["check", "learn", "test"].map((name) => {
+    const el = new FakeEl(`nav-${name}`);
+    el.dataset.view = name;
     return el;
   });
-  const panels = ["contract", "payload"].map((name) => new FakeEl(`panel-${name}`));
+  for (const el of els["wallet-picker"] ? [els["wallet-picker"]] : []) el.hidden = true;
 
   globalThis.document = {
     getElementById: (id) => els[id] ?? null,
     querySelectorAll: (sel) =>
-      sel === ".tab" ? tabs : sel === ".panel" ? panels : [],
+      sel === ".view" ? views : sel === ".navbtn[data-view]" ? navs : sel === "[data-sample]" ? [] : [],
   };
   globalThis.location = { search: "", hash: "" };
   globalThis.URLSearchParams = URLSearchParams;
@@ -73,6 +81,10 @@ function makeDom() {
     throw new TypeError("fetch failed");
   };
   globalThis.AbortController = AbortController;
+  globalThis.window = globalThis.window ?? {};
+  globalThis.window.addEventListener = () => {};
+  globalThis.window.dispatchEvent = () => {};
+  globalThis.Event = globalThis.Event ?? class { constructor(t) { this.type = t; } };
   return els;
 }
 
@@ -355,8 +367,8 @@ test("an unspent, never-expiring permit is called out as a standing permission",
     liveness: { nonceReturns: "0", allowanceReturns: "0" },
   });
   assert.match(text, /can this be used against you later/i);
-  assert.match(text, /NOT yet used — still executable/i);
-  assert.match(text, /never \(deadline = uint256 max\)/i);
+  assert.match(text, /not yet — still executable/i);
+  assert.match(text, /expires never/i);
   assert.match(text, /has NOT been submitted yet/i);
   assert.match(text, /it never expires/i);
 });
@@ -377,7 +389,7 @@ test("an already-spent permit is reported as no longer executable", async () => 
     checkLiveness: true,
     liveness: { nonceReturns: "7", allowanceReturns: "0" },
   });
-  assert.match(text, /already used/i);
+  assert.match(text, /yes, spent/i);
   assert.match(text, /no longer executable/i);
   assert.doesNotMatch(text, /still executable/i);
 });
@@ -445,7 +457,7 @@ test("a chain mismatch is flagged before any other reassurance", async () => {
   });
   assert.match(text, /WRONG CHAIN/);
   assert.match(text, /endpoint is on chain 4663/i);
-  assert.match(text, /payload says 1/i);
+  assert.match(text, /the request says 1/i);
   assert.doesNotMatch(text, /matches the payload/i);
 });
 
@@ -455,7 +467,7 @@ test("a matching chain is stated positively", async () => {
     checkOnchain: true,
     separator: "0x06c37168a7db5138defc7866392bb87a741f9b3d104deb5094588ce041cae335",
   });
-  assert.match(text, /chain 1 — matches the payload/i);
+  assert.match(text, /chain 1 — matches/i);
   assert.doesNotMatch(text, /WRONG CHAIN/);
 });
 
@@ -499,6 +511,26 @@ test("the payload box re-renders to what was actually checked", async () => {
   const shown = JSON.parse(els["payload"].value);
   assert.equal(shown.primaryType, "Permit", "box should show the object that was checked");
   assert.equal(shown.params, undefined);
+});
+
+test("a chain mismatch suppresses checks that would describe another contract", async () => {
+  // Reporting "domain matches on-chain" while also saying "wrong chain" is a
+  // contradiction: the comparison is between unrelated contracts. Every read
+  // that depends on the endpoint's chain must stand down.
+  const text = await renderPayload(DRAIN_PAYLOAD, {
+    chainIdReturns: 4663,
+    checkOnchain: true,
+    inspectSpenders: true,
+    checkLiveness: true,
+    liveness: { nonceReturns: "0", allowanceReturns: "0" },
+    separator: "0x06c37168a7db5138defc7866392bb87a741f9b3d104deb5094588ce041cae335",
+  });
+  assert.match(text, /WRONG CHAIN/);
+  assert.doesNotMatch(text, /matches the verifying contract's on-chain separator/i);
+  assert.doesNotMatch(text, /can this be used against you later/i);
+  // The section heading is a chain read and must be gone. The payload's own
+  // spender field is not a chain read, so it stays.
+  assert.doesNotMatch(text, /WHO RECEIVES THIS AUTHORITY/);
 });
 
 test("a wrong name renders as incompatible, loudly", async () => {

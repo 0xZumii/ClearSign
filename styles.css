@@ -45,6 +45,25 @@ code { background: #1b2230; padding: 0.1em 0.35em; border-radius: 4px; word-brea
 .repo-link { font-size: 0.85rem; color: var(--text-faint); text-decoration: none; }
 .repo-link:hover { color: var(--accent); }
 
+/* ---------- top-right nav ---------- */
+.site-nav { display: flex; align-items: center; gap: 0.3rem; }
+.navbtn {
+  background: transparent;
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+.navbtn:hover { color: var(--text); }
+.navbtn.active { color: var(--text); background: var(--bg-raised); border-color: var(--border); }
+.navbtn.source { color: var(--text-faint); font-weight: 500; }
+
+.view { display: none; }
+.view.active { display: block; }
+
 /* ---------- intro ---------- */
 .intro p { margin: 0 0 0.75rem; }
 .intro .dim { color: var(--text-dim); font-size: 0.93rem; }
@@ -92,7 +111,7 @@ button.secondary { background: #1b2230; color: var(--text); font-weight: 600; }
 .hint.bad { color: var(--critical); }
 .hint.ok-text { color: var(--ok); }
 
-/* ---------- tabs ---------- */
+/* ---------- tabs (legacy two-panel nav, retained for any old links) ---------- */
 .tabs { display: flex; gap: 0.35rem; margin: 1.4rem 0 1rem; border-bottom: 1px solid var(--border); }
 .tab {
   background: transparent;
@@ -106,6 +125,34 @@ button.secondary { background: #1b2230; color: var(--text); font-weight: 600; }
 
 .panel { display: none; }
 .panel.active { display: block; }
+
+/* ---------- learn view ---------- */
+.learn-item { margin: 1.6rem 0; }
+.learn-item h2 { font-size: 1.02rem; margin: 0 0 0.6rem; }
+.learn-item > p { margin: 0 0 0.6rem; }
+.learn-item dl { margin: 0; }
+.learn-item dt { font-weight: 700; margin-top: 0.9rem; }
+.learn-item dd { margin: 0.25rem 0 0; color: var(--text-dim); font-size: 0.92rem; line-height: 1.6; }
+.learn-item ul { margin: 0; padding-left: 1.1rem; font-size: 0.92rem; line-height: 1.6; }
+.learn-item li { margin-bottom: 0.5rem; }
+.learn-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+.learn-table th {
+  text-align: left;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-dim);
+  padding: 0.4rem 0.6rem 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.learn-table td { padding: 0.45rem 0.6rem 0.45rem 0; border-bottom: 1px solid #1c2330; vertical-align: top; }
+.learn-table td:first-child { color: var(--text); }
+.learn-table td:last-child { color: var(--text-dim); }
+
+.options { display: flex; flex-wrap: wrap; gap: 0.2rem 1.2rem; margin: 0.7rem 0 0; }
+.quiet { margin-top: 1.6rem; }
+.quiet summary { cursor: pointer; font-size: 0.85rem; color: var(--text-faint); }
+.quiet[open] summary { color: var(--text-dim); margin-bottom: 0.5rem; }
 
 .expected { margin-top: 0.9rem; }
 .expected summary { cursor: pointer; font-size: 0.85rem; color: var(--text-dim); }

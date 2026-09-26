@@ -13,224 +13,260 @@
     <div class="brand">
       <div class="brand-text">
         <h1>ClearSign</h1>
-        <p class="tagline">Does this contract verify the domain your wallet signs?</p>
+        <p class="tagline">Check what a signature actually does, before you sign it.</p>
       </div>
     </div>
-    <a class="repo-link" href="https://github.com/0xZumii/ClearSign" aria-label="Source">source</a>
+    <nav class="site-nav">
+      <button class="navbtn active" data-view="check">Check</button>
+      <button class="navbtn" data-view="learn">Learn</button>
+      <button class="navbtn" data-view="test">Test</button>
+      <a class="navbtn source" href="https://github.com/0xZumii/ClearSign">source</a>
+    </nav>
   </div>
 </header>
 
 <main class="wrap">
-  <section class="intro">
-    <p>
-      An EIP-712 type string is opaque data to the compiler. A typo in a domain
-      field compiles, deploys, and silently breaks every signature: the wallet
-      hashes what the spec says, the contract hashes what the typo says, and the
-      digests never match. Nothing reverts.
-    </p>
-    <p class="dim">
-      This page recomputes the domain separator the way a wallet would and
-      compares it to the contract's own <code>DOMAIN_SEPARATOR()</code>. It
-      <strong>never says "safe"</strong> — when it cannot verify something, it
-      says so.
-    </p>
-  </section>
 
-  <section class="settings" aria-label="RPC settings">
-    <details class="expected">
-      <summary>Advanced: RPC endpoint (only if the defaults are blocked)</summary>
+  <!-- ===================== CHECK (the tool) ===================== -->
+  <div id="view-check" class="view active">
+    <section class="intro">
+      <p>
+        Paste the signing request your wallet is showing you. ClearSign tells you
+        what it authorises, whether the contract will accept it, and whether it
+        can be used against you later.
+      </p>
+    </section>
+
+    <label for="payload">The signing request</label>
+    <textarea id="payload" rows="10" spellcheck="false"
+      placeholder='Paste the JSON your wallet is showing you, e.g. {"types":{...},"primaryType":"Permit","domain":{...},"message":{...}}
+
+No request handy? Use the Learn tab to see real examples.'></textarea>
+
+    <div class="row">
+      <input id="signature" type="text" spellcheck="false"
+             placeholder="signature (optional), 0x… 65 bytes" />
+      <button id="check-payload" type="button">Check</button>
+      <button type="button" class="secondary" id="clear-payload">Clear</button>
+    </div>
+
+    <div class="options">
+      <label class="inline">
+        <input id="check-onchain" type="checkbox" checked />
+        check the contract on-chain
+      </label>
+      <label class="inline">
+        <input id="check-spenders" type="checkbox" checked />
+        look up who receives the authority
+      </label>
+      <label class="inline">
+        <input id="check-liveness" type="checkbox" checked />
+        check if it expires or can be used later
+      </label>
+    </div>
+
+    <output id="payload-out" class="out" aria-live="polite"></output>
+
+    <details class="quiet">
+      <summary>I only have a contract address, not a request</summary>
       <p class="hint">
-        You probably do not need this. ClearSign tries public endpoints that work
-        from a browser. Change it only if the status below says they are
-        blocked — for example to point at a chain those defaults do not serve.
+        Checks whether a contract's signing domain actually works — the failure
+        where a typo in the domain makes every signature it receives invalid.
+        Tokens like USDC and DAI expose no name on-chain, so supplying the one
+        they were deployed with is what lets them be checked.
+      </p>
+      <div class="row">
+        <input id="address" type="text" spellcheck="false"
+               placeholder="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" />
+        <input id="exp-name" type="text" placeholder="name, e.g. USD Coin" spellcheck="false" />
+        <input id="exp-version" type="text" placeholder="version, e.g. 2" spellcheck="false" />
+        <button id="inspect" type="button" class="secondary">Inspect</button>
+      </div>
+      <output id="contract-out" class="out" aria-live="polite"></output>
+    </details>
+
+    <details class="quiet">
+      <summary>Wrong chain, or the defaults are blocked?</summary>
+      <p class="hint">
+        ClearSign tries public endpoints that work from a browser. If the status
+        below says they are blocked, or you are checking something on a chain
+        they do not serve, paste an endpoint here.
       </p>
       <div class="row">
         <input id="rpc-url" type="text" spellcheck="false"
                placeholder="https://… (an endpoint, not a payload)" />
         <button id="rpc-apply" type="button" class="secondary">Apply</button>
       </div>
-      <p class="hint" id="rpc-status">
-        A browser can only call endpoints that allow it (CORS). If the defaults
-        are blocked, paste your own — a local node, Alchemy, Infura.
-      </p>
+      <p class="hint" id="rpc-status">checking the default endpoints…</p>
     </details>
-  </section>
+  </div>
 
-  <nav class="tabs" role="tablist">
-    <button class="tab active" data-tab="contract" role="tab" aria-selected="true">Contract</button>
-    <button class="tab" data-tab="payload" role="tab" aria-selected="false">Signed payload</button>
-  </nav>
+  <!-- ===================== LEARN ===================== -->
+  <div id="view-learn" class="view">
+    <section class="intro">
+      <p>
+        What the tool checks, what a signature can do to you, and what the output
+        means. Every example below can be loaded straight into the checker.
+      </p>
+    </section>
 
-  <!-- ================= Contract tab ================= -->
-  <section id="panel-contract" class="panel active" role="tabpanel">
-    <label for="address">Contract address</label>
-    <div class="row">
-      <input id="address" type="text" spellcheck="false"
-             placeholder="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" />
-      <button id="inspect" type="button">Inspect</button>
-    </div>
-
-    <details class="expected">
-      <summary>Pre-ERC-5267 contract? Supply its deployed name/version</summary>
-      <p class="hint">
-        Tokens like USDC and DAI expose <code>DOMAIN_SEPARATOR()</code> but not
-        <code>eip712Domain()</code>, so there is nothing on-chain to read a name
-        from. Supplying the name the contract was <em>deployed</em> with lets it
-        be verified. A wrong name will show up as a mismatch — which is the point.
+    <section class="learn-item">
+      <h2>Try a real example</h2>
+      <p class="dim">
+        The fastest way to understand the output is to look at one. Load either
+        of these and press Check.
       </p>
       <div class="row">
-        <input id="exp-name" type="text" placeholder="name, e.g. USD Coin" spellcheck="false" />
-        <input id="exp-version" type="text" placeholder="version, e.g. 2" spellcheck="false" />
+        <button type="button" id="sample-drain">Load a drain-shaped permit</button>
+        <button type="button" class="secondary" id="sample-safe">Load an ordinary message</button>
       </div>
-    </details>
-
-    <output id="contract-out" class="out" aria-live="polite"></output>
-  </section>
-
-  <!-- ================= Payload tab ================= -->
-  <section id="panel-payload" class="panel" role="tabpanel">
-    <label for="payload">eth_signTypedData_v4 payload</label>
-    <p class="hint">
-      Paste what your wallet is showing you, before you sign it. The signature
-      field is optional — with it, the signer is recovered.
-    </p>
-
-    <details class="expected">
-      <summary>Where do I find this? What if my chain isn't Ethereum?</summary>
-      <div class="hint">
-        <p>
-          <strong>Finding the request.</strong> When a site asks you to sign,
-          your wallet shows a prompt with the fields and the contract address.
-          Copy that JSON. If the site only shows you a summary, open your
-          wallet's detailed view — the address is labelled
-          <code>verifyingContract</code>.
-        </p>
-        <p>
-          <strong>Other chains.</strong> Put your chain's RPC endpoint in the
-          box at the top first — the page checks that the endpoint's chain
-          matches the <code>chainId</code> in the payload, and will refuse to
-          pretend otherwise. For Robinhood Chain, that endpoint is
-          <code>rpc.mainnet.chain.robinhood.com</code> and the chain id is
-          <code>4663</code>.
-        </p>
-        <p>
-          <strong>Chain names this page recognises</strong> are shown next to
-          the connection status. An unrecognised chain still works, it just
-          isn't named.
-        </p>
-      </div>
-    </details>
-
-    <div class="row samples">
-      <span class="dim">No request handy? Try one:</span>
-      <button type="button" class="secondary" id="sample-drain">a drain-shaped permit</button>
-      <button type="button" class="secondary" id="sample-safe">an ordinary message</button>
-      <button type="button" class="secondary test-trigger" id="open-trigger">⚑ make a real signing prompt</button>
-    </div>
-    <textarea id="payload" rows="12" spellcheck="false"
-      placeholder='{"types":{...},"primaryType":"Permit","domain":{...},"message":{...}}'></textarea>
-
-    <div class="row">
-      <input id="signature" type="text" spellcheck="false"
-             placeholder="signature (optional), 0x… 65 bytes" />
-      <button id="check-payload" type="button">Check</button>
-    </div>
-    <label class="inline">
-      <input id="check-onchain" type="checkbox" checked />
-      compare the domain against the verifying contract on-chain
-    </label>
-    <label class="inline">
-      <input id="check-spenders" type="checkbox" checked />
-      look up whoever receives the authority; (spender, operator)
-    </label>
-    <label class="inline">
-      <input id="check-liveness" type="checkbox" checked />
-      check whether a permit is still usable, and whether it expires
-    </label>
-
-    <output id="payload-out" class="out" aria-live="polite"></output>
-
-    <section class="trigger-note" id="trigger-note" hidden>
-      <div class="trigger-head">
-        <span class="pill notable">test trigger</span>
-        <strong>Producing a signature prompt to check</strong>
-      </div>
-      <p class="dim">
-        Real dapps usually gate the signing step behind eligibility — a balance,
-        an allowlist, a mint window — so you often cannot reach a signature
-        prompt on demand just to look at one. The trigger page calls
-        <code>eth_signTypedData_v4</code> directly with a payload you control, so
-        you can see exactly what a wallet shows you.
+      <p class="hint">
+        The first is an unlimited, never-expiring permission. It is the shape of
+        the most common wallet drain. Loading it does not sign anything.
       </p>
+    </section>
+
+    <section class="learn-item">
+      <h2>The three things this checks</h2>
+      <dl>
+        <dt>Will the contract accept your signature?</dt>
+        <dd>
+          A wallet and a contract must agree on a domain string before signing.
+          If a contract's copy has a typo, every signature it receives is
+          invalid — forever, and silently. Nothing reverts. The wallet shows a
+          normal prompt and the transaction simply fails.
+        </dd>
+
+        <dt>What does the signature authorise?</dt>
+        <dd>
+          A signature is not a payment. It is a standing permission. An
+          <em>unlimited</em> allowance lets the recipient move your entire
+          balance, not just what you meant to spend.
+        </dd>
+
+        <dt>Can it be used against you later?</dt>
+        <dd>
+          This is the one people miss. A permit does not have to be used
+          immediately. If the permission has not been submitted yet, whoever
+          holds it can use it whenever they like — and a <code>deadline</code> of
+          the maximum number means <em>never expires</em>.
+        </dd>
+      </dl>
+    </section>
+
+    <section class="learn-item">
+      <h2>What your wallet already tells you</h2>
+      <p class="dim">
+        Modern wallets have improved. A prompt may already say "Spending cap:
+        Unlimited" and name the spender. Where that happens, ClearSign is not
+        repeating it — it adds the parts a wallet cannot know without asking the
+        chain:
+      </p>
+      <table class="learn-table">
+        <thead><tr><th>ClearSign adds</th><th>Why the wallet can't</th></tr></thead>
+        <tbody>
+          <tr><td>Whether the permit has been submitted yet</td><td>Needs to read <code>nonces(owner)</code></td></tr>
+          <tr><td>Whether it expires, or never can</td><td>Needs the deadline interpreted, not just shown</td></tr>
+          <tr><td>Whether the contract will accept it</td><td>Needs the two domain separators compared</td></tr>
+          <tr><td>The spender's history</td><td>Needs to read code size and transaction count</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="learn-item">
+      <h2>What this cannot tell you</h2>
       <ul class="dim">
         <li>
-          <strong>It sends no transaction and spends no gas.</strong> A typed-data
-          signature is off-chain.
+          <strong>It is not a safety score.</strong> A malicious contract can ask
+          for an unlimited approval with a perfectly valid domain. The signature
+          verifies, and you are still drained. Only reading the fields catches
+          that.
         </li>
         <li>
-          <strong>But a signature is still authorisation.</strong> That is the whole
-          reason this tool exists — never sign a payload you do not understand.
+          <strong>It checks EVM chains.</strong> Solana and similar have no
+          standard typed-data signing, so there is nothing to compare — not
+          unsupported, uncheckable.
         </li>
         <li>
-          <strong>The examples point at example contracts</strong>, so signing them
-          cannot move anything.
-        </li>
-        <li>
-          Once you have signed, <strong>copy the payload back here</strong> to see
-          what it authorised, whether the contract would accept it, and whether it
-          can be used against you later.
+          <strong>"Cannot verify" is not a pass.</strong> When ClearSign cannot
+          see enough to judge, it says so rather than implying the result is fine.
         </li>
       </ul>
-      <div class="row">
-        <a class="btn-like" href="./sign.html">Open the test trigger →</a>
-        <button type="button" class="secondary" id="close-trigger">dismiss</button>
-      </div>
     </section>
-  </section>
 
-  <section class="how">
-    <h2>How to use this before you sign</h2>
-    <ol>
-      <li>
-        A dapp asks your wallet to sign. The request contains a
-        <code>verifyingContract</code> — the contract address — and it is shown
-        in the wallet prompt. Copy the whole request, or the JSON your wallet
-        displays.
-      </li>
-      <li>Paste it into the <strong>Signed payload</strong> tab above.</li>
-      <li>
-        Read <strong>what this signature authorises</strong>. That is the part
-        that can cost you money: an unlimited allowance hands over the whole
-        balance.
-      </li>
-      <li>
-        The domain check tells you whether the contract will <em>accept</em> the
-        signature. It does not tell you the contract is honest.
-      </li>
-    </ol>
-    <p class="caveat">
-      A pass here is not a green light. A malicious contract can ask for an
-      unlimited approval with a perfectly valid, on-chain-consistent domain —
-      the signature verifies, and you are drained. The domain check catches
-      broken contracts; only reading the fields catches hostile ones.
-    </p>
-  </section>
+    <section class="learn-item">
+      <h2>Where the contract address comes from</h2>
+      <p class="dim">
+        You do not have to go looking for it. When a site asks you to sign, the
+        request it sends your wallet contains <code>verifyingContract</code> —
+        the contract's address — and that is what your wallet displays in its
+        prompt. Copying the request copies the address with it.
+      </p>
+    </section>
+  </div>
 
-  <section class="limits">
-    <h2>What this cannot tell you</h2>
-    <ul>
-      <li>It is not an oracle. "No mismatch detected" is not "safe".</li>
-      <li>
-        A typo inside a <em>message</em> struct's type string (e.g. in
-        <code>Permit</code>) is only caught if you supply a signature — then
-        recovery fails and says so.
-      </li>
-      <li>
-        <code>unverified</code> and <code>no_domain</code> are not verdicts.
-        They mean the tool could not see enough to judge either way.
-      </li>
-    </ul>
-  </section>
+  <!-- ===================== TEST ===================== -->
+  <div id="view-test" class="view">
+    <section class="intro">
+      <p>
+        Real dapps usually gate the signing step behind eligibility — a balance,
+        an allowlist, a mint window — so it can be surprisingly hard to reach a
+        signature prompt on demand just to see what one looks like.
+      </p>
+      <p class="caveat">
+        <strong>Nothing here moves funds.</strong> Signing typed data produces an
+        off-chain signature; no transaction is sent and no gas is spent. But a
+        signature <em>is</em> authorisation, so sign only what you understand.
+        The examples point at example contracts. Use a wallet holding nothing you
+        would miss.
+      </p>
+    </section>
+
+    <section class="learn-item">
+      <h2>1. Your wallet</h2>
+      <p class="hint" id="wallet-status">not connected</p>
+      <div class="row">
+        <button id="connect" type="button">Connect wallet</button>
+      </div>
+      <div id="wallet-picker" hidden></div>
+      <p class="hint">
+        Works with any EVM wallet. If you have more than one installed they
+        announce themselves and you choose — rather than whichever loaded last
+        silently winning. ClearSign never asks you to add a chain; that prompt is
+        a common drainer trick.
+      </p>
+    </section>
+
+    <section class="learn-item">
+      <h2>2. The request to sign</h2>
+      <textarea id="test-payload" rows="12" spellcheck="false"></textarea>
+      <div class="row samples">
+        <span class="dim">Load an example:</span>
+        <button type="button" class="secondary" data-sample="permit">unlimited permit</button>
+        <button type="button" class="secondary" data-sample="harmless">harmless message</button>
+      </div>
+      <p class="hint">
+        On a non-Ethereum chain the example points at a placeholder address, so
+        it does not imply a real contract exists there.
+      </p>
+    </section>
+
+    <section class="learn-item">
+      <h2>3. Ask your wallet to sign it</h2>
+      <div class="row">
+        <button id="sign" type="button">Sign with wallet</button>
+        <button id="copy-payload" type="button" class="secondary">Copy the request</button>
+        <button id="send-to-check" type="button" class="secondary">Check it →</button>
+      </div>
+      <p class="hint">
+        Your wallet shows its own summary — "Spending cap: Unlimited", the
+        spender, the network. It will <strong>not</strong> show you the JSON the
+        checker reads, so use <em>Check it</em> to carry the request over.
+      </p>
+      <output id="test-out" class="out" aria-live="polite"></output>
+    </section>
+  </div>
+
 </main>
 
 <footer class="wrap site-footer">
