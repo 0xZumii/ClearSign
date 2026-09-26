@@ -169,6 +169,14 @@ button.secondary { background: #1b2230; color: var(--text); font-weight: 600; }
 /* An unlimited allowance is the single most costly thing on the page; it gets
    colour so it cannot be skimmed past. */
 .unlimited { color: var(--high); font-weight: 700; }
+
+.spender {
+  margin: 0.5rem 0;
+  padding: 0.6rem 0.8rem;
+  background: #0d1117;
+  border-radius: 8px;
+  border-left: 2px solid var(--border);
+}
 .level {
   display: inline-block;
   min-width: 4.6rem;

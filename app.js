@@ -178,8 +178,40 @@ function renderPayload(result) {
     parts.push(`<p><span class="pill high">domain does NOT match on-chain — the contract would reject this signature</span></p>`);
   }
 
+  // Who ends up holding the authority. Rendered after the fields, because the
+  // facts only mean something once you have seen what is being granted.
+  if (result.spenders?.length) {
+    parts.push(`<h3 class="subhead">who receives this authority</h3>`);
+    for (const s of result.spenders) {
+      parts.push(`<div class="spender">`);
+      parts.push(
+        rowsHtml([
+          ["field", s.path],
+          ["address", s.address],
+          ["has code", s.isContract === null ? "unknown" : s.isContract ? `yes (${s.codeSize} bytes)` : "no — plain account"],
+          ["txs sent", s.txCount === null ? "unknown" : String(s.txCount)],
+          ["balance", s.balanceWei === null ? "unknown" : `${formatWei(s.balanceWei)} ETH`],
+        ])
+      );
+      parts.push(`<ul class="findings">${s.findings.map(findingHtml).join("")}</ul>`);
+      parts.push(`</div>`);
+    }
+  }
+
   parts.push(`<ul class="findings">${result.findings.map(findingHtml).join("")}</ul></div>`);
   return parts.join("");
+}
+
+/** Wei to a short ETH string, without pulling in a bignumber library. */
+function formatWei(wei) {
+  const n = BigInt(wei);
+  if (n === 0n) return "0";
+  const whole = n / 10n ** 18n;
+  const frac = n % 10n ** 18n;
+  if (whole > 0n) return String(whole) + "." + String(frac).padStart(18, "0").slice(0, 4);
+  // Below 1 ETH, show enough decimals to tell dust from real funding.
+  const fracStr = String(frac).padStart(18, "0").slice(0, 8).replace(/0+$/, "");
+  return fracStr ? "0." + fracStr : "<0.00000001";
 }
 
 function busy(out, message) {
@@ -250,6 +282,7 @@ $("check-payload").addEventListener("click", async () => {
     const result = await inspectPayload(rpc, payload, {
       signature,
       checkOnchain: $("check-onchain").checked,
+      inspectSpenders: $("check-spenders").checked,
     });
     out.innerHTML = renderPayload(result);
   } catch (error) {

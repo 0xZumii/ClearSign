@@ -39,7 +39,7 @@ class FakeEl {
 const ids = [
   "rpc-url", "rpc-apply", "rpc-status", "address", "inspect",
   "exp-name", "exp-version", "contract-out", "payload", "signature",
-  "check-payload", "check-onchain", "payload-out",
+  "check-payload", "check-onchain", "check-spenders", "payload-out",
 ];
 
 function makeDom() {
@@ -166,14 +166,25 @@ test("a consistent domain still carries the 'not an endorsement' caveat", async 
 });
 
 async function renderPayload(payload, options = {}) {
-  const original = { chainId: Rpc.prototype.chainId, callContract: Rpc.prototype.callContract };
+  const original = {
+    chainId: Rpc.prototype.chainId,
+    callContract: Rpc.prototype.callContract,
+    getCode: Rpc.prototype.getCode,
+    getTransactionCount: Rpc.prototype.getTransactionCount,
+    getBalance: Rpc.prototype.getBalance,
+  };
   Rpc.prototype.chainId = async () => 1;
   Rpc.prototype.callContract = async () => options.separator ?? "0x";
+  Rpc.prototype.getCode = async () =>
+    options.noCode === false ? "0x" + "60".repeat(options.codeSize ?? 100) : "0x";
+  Rpc.prototype.getTransactionCount = async () => options.txCount ?? 0;
+  Rpc.prototype.getBalance = async () => options.balance ?? 0n;
   try {
     els["payload-out"].innerHTML = "";
     els["payload"].value = JSON.stringify(payload);
     els["signature"].value = "";
     els["check-onchain"].checked = Boolean(options.checkOnchain);
+    els["check-spenders"].checked = Boolean(options.inspectSpenders);
     els["check-payload"].click();
     await new Promise((r) => setTimeout(r, 0));
     return els["payload-out"].innerText;
@@ -260,6 +271,53 @@ test("the same name at the wrong address is a mismatch, not a pass", async () =>
   });
   assert.match(text, /INCOMPATIBLE/);
   assert.doesNotMatch(text, /domain is consistent/i);
+});
+
+test("a fresh EOA receiving unlimited authority is shown, facts not verdicts", async () => {
+  // The shape that matters, and the one a domain check cannot see: a perfectly
+  // consistent domain granting infinite authority to an address with no code
+  // and no history. Every fact here is checkable against the same node.
+  const text = await renderPayload(DRAIN_PAYLOAD, {
+    separator: "0x06c37168a7db5138defc7866392bb87a741f9b3d104deb5094588ce041cae335",
+    checkOnchain: true,
+    inspectSpenders: true,
+    noCode: true,
+    txCount: 0,
+    balance: 0n,
+  });
+  assert.match(text, /who receives this authority/i);
+  assert.match(text, /no — plain account/i);
+  assert.match(text, /never sent a transaction/i);
+  assert.match(text, /UNLIMITED/);
+  // It must not claim to KNOW this is a drainer. Facts, not a verdict.
+  assert.doesNotMatch(text, /\bis a drainer\b/i);
+  assert.doesNotMatch(text, /\bconfirmed scam\b/i);
+});
+
+test("a known, active contract spender reads calmly", async () => {
+  const text = await renderPayload(DRAIN_PAYLOAD, {
+    inspectSpenders: true,
+    noCode: false,
+    codeSize: 8000,
+    txCount: 1, // realistic: a router is called, it does not call
+    balance: 10n ** 18n,
+  });
+  assert.match(text, /yes \(8000 bytes\)/i);
+  assert.doesNotMatch(text, /never sent a transaction/i);
+  assert.doesNotMatch(text, /small enough to be a forwarder/i);
+  // The tx-count caveat must be present for a contract, since a low count is
+  // normal there and would otherwise mislead.
+  assert.match(text, /counts only transactions it originated/i);
+});
+
+test("a tiny forwarder spender is called out as small, not as malicious", async () => {
+  const text = await renderPayload(DRAIN_PAYLOAD, {
+    inspectSpenders: true,
+    noCode: false,
+    codeSize: 45,
+  });
+  assert.match(text, /small enough to be a forwarder/i);
+  assert.doesNotMatch(text, /\bis a drainer\b/i);
 });
 
 test("a wrong name renders as incompatible, loudly", async () => {
