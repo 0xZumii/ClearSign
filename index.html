@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ClearSign — EIP-712 Inspector</title>
+<meta name="description" content="Recompute EIP-712 domain separators and compare them against what a contract verifies on-chain. Reports what it could not see rather than assuming safety." />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <div class="brand-text">
+        <h1>ClearSign</h1>
+        <p class="tagline">Does this contract verify the domain your wallet signs?</p>
+      </div>
+    </div>
+    <a class="repo-link" href="https://github.com/0xZumii/ClearSign" aria-label="Source">source</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="intro">
+    <p>
+      An EIP-712 type string is opaque data to the compiler. A typo in a domain
+      field compiles, deploys, and silently breaks every signature: the wallet
+      hashes what the spec says, the contract hashes what the typo says, and the
+      digests never match. Nothing reverts.
+    </p>
+    <p class="dim">
+      This page recomputes the domain separator the way a wallet would and
+      compares it to the contract's own <code>DOMAIN_SEPARATOR()</code>. It
+      <strong>never says "safe"</strong> — when it cannot verify something, it
+      says so.
+    </p>
+  </section>
+
+  <section class="settings" aria-label="RPC settings">
+    <label for="rpc-url">RPC endpoint</label>
+    <div class="row">
+      <input id="rpc-url" type="text" spellcheck="false"
+             placeholder="leave blank to try public endpoints" />
+      <button id="rpc-apply" type="button" class="secondary">Apply</button>
+    </div>
+    <p class="hint" id="rpc-status">
+      A browser can only call endpoints that allow it (CORS). If the defaults are
+      blocked, paste your own — a local node, Alchemy, Infura.
+    </p>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="contract" role="tab" aria-selected="true">Contract</button>
+    <button class="tab" data-tab="payload" role="tab" aria-selected="false">Signed payload</button>
+  </nav>
+
+  <!-- ================= Contract tab ================= -->
+  <section id="panel-contract" class="panel active" role="tabpanel">
+    <label for="address">Contract address</label>
+    <div class="row">
+      <input id="address" type="text" spellcheck="false"
+             placeholder="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" />
+      <button id="inspect" type="button">Inspect</button>
+    </div>
+
+    <details class="expected">
+      <summary>Pre-ERC-5267 contract? Supply its deployed name/version</summary>
+      <p class="hint">
+        Tokens like USDC and DAI expose <code>DOMAIN_SEPARATOR()</code> but not
+        <code>eip712Domain()</code>, so there is nothing on-chain to read a name
+        from. Supplying the name the contract was <em>deployed</em> with lets it
+        be verified. A wrong name will show up as a mismatch — which is the point.
+      </p>
+      <div class="row">
+        <input id="exp-name" type="text" placeholder="name, e.g. USD Coin" spellcheck="false" />
+        <input id="exp-version" type="text" placeholder="version, e.g. 2" spellcheck="false" />
+      </div>
+    </details>
+
+    <output id="contract-out" class="out" aria-live="polite"></output>
+  </section>
+
+  <!-- ================= Payload tab ================= -->
+  <section id="panel-payload" class="panel" role="tabpanel">
+    <label for="payload">eth_signTypedData_v4 payload</label>
+    <p class="hint">
+      Paste what your wallet is showing you, before you sign it. The signature
+      field is optional — with it, the signer is recovered.
+    </p>
+    <textarea id="payload" rows="12" spellcheck="false"
+      placeholder='{"types":{...},"primaryType":"Permit","domain":{...},"message":{...}}'></textarea>
+
+    <div class="row">
+      <input id="signature" type="text" spellcheck="false"
+             placeholder="signature (optional), 0x… 65 bytes" />
+      <button id="check-payload" type="button">Check</button>
+    </div>
+    <label class="inline">
+      <input id="check-onchain" type="checkbox" checked />
+      compare the domain against the verifying contract on-chain
+    </label>
+
+    <output id="payload-out" class="out" aria-live="polite"></output>
+  </section>
+
+  <section class="limits">
+    <h2>What this cannot tell you</h2>
+    <ul>
+      <li>It is not an oracle. "No mismatch detected" is not "safe".</li>
+      <li>
+        A typo inside a <em>message</em> struct's type string (e.g. in
+        <code>Permit</code>) is only caught if you supply a signature — then
+        recovery fails and says so.
+      </li>
+      <li>
+        <code>unverified</code> and <code>no_domain</code> are not verdicts.
+        They mean the tool could not see enough to judge either way.
+      </li>
+    </ul>
+  </section>
+</main>
+
+<footer class="wrap site-footer">
+  <p class="dim">
+    Pure client-side — no server, no accounts, no analytics. Nothing you paste
+    leaves the browser except the RPC calls needed to read the chain.
+  </p>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

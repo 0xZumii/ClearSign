@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ["20", "22"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # These tests need no install: the project has zero dependencies.
+      # The spec-vector suite is deterministic and must always pass.
+      - name: Unit tests (spec vector, hashing, curve, classification)
+        run: npm test
+
+      # The live suite talks to a public RPC. It is allowed to fail for
+      # transport reasons -- a rate-limited CI runner is not a code defect --
+      # but the skip logic inside it must not silently pass everything.
+      - name: Live tests against mainnet
+        run: npm run test:live
+        continue-on-error: true

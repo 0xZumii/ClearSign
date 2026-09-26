@@ -1,0 +1,18 @@
+{
+  "name": "clearsign",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Recompute EIP-712 domain separators and compare them against what a contract verifies on-chain.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0xZumii/ClearSign"
+  },
+  "scripts": {
+    "serve": "node scripts/serve.mjs",
+    "test": "node --test tests/spec-vector.test.mjs tests/render.test.mjs",
+    "test:live": "node --test tests/live.test.mjs",
+    "test:all": "node --test tests/spec-vector.test.mjs tests/render.test.mjs tests/live.test.mjs"
+  },
+  "license": "MIT"
+}
