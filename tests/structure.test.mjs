@@ -143,11 +143,21 @@ test("depth is available but collapsed by default", () => {
   assert.doesNotMatch(learn, /<details class="more" open>/);
 });
 
-test("loading an example offers a way back without the tab", () => {
-  // The report: the only route back was hitting Learn again.
-  assert.match(index, /id="sample-reset"/);
-  assert.match(appJs, /\$\("sample-reset"\)\.addEventListener/);
-  assert.match(appJs, /showView\("learn"\)/);
+test("the way back lives on Check, not on Learn", () => {
+  // Reported bug: it was placed on Learn, where it does nothing, instead of on
+  // the page the example sends you to.
+  const checkStart = index.indexOf('id="view-check"');
+  const learnStart = index.indexOf('id="view-learn"');
+  const resetPos = index.indexOf('id="sample-reset"');
+  assert.ok(resetPos > checkStart && resetPos < learnStart, "reset belongs to the Check view");
+  assert.match(index, /id="back-to-learn" hidden/);
+});
+
+test("the way back stays hidden for someone who pasted their own request", () => {
+  // It is navigation for a specific path, not permanent clutter.
+  assert.match(appJs, /\$\("back-to-learn"\)\.hidden = false/);
+  assert.match(appJs, /\$\("back-to-learn"\)\.hidden = true/);
+  assert.match(appJs, /Any deliberate navigation hides it/);
 });
 
 test("the Learn tab covers hygiene beyond any single signature", () => {

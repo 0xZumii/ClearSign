@@ -573,20 +573,27 @@ function loadExample(key) {
   $("payload").value = JSON.stringify(payload, null, 2);
   $("signature").value = "";
   showView("check");
+  // The way back belongs on the page you land on, not the one you left. Shown
+  // only for this path: someone who pasted their own request does not need it.
+  $("back-to-learn").hidden = false;
   $("check-payload").click();
 }
 
 $("sample-drain").addEventListener("click", () => loadExample("drain"));
 $("sample-safe").addEventListener("click", () => loadExample("safe"));
 
-/**
- * Loading an example jumps to Check, which leaves the browser Back button as the
- * only way out. This puts Learn back in reach without a history dance.
- */
 $("sample-reset").addEventListener("click", () => {
+  $("back-to-learn").hidden = true;
   showView("learn");
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
+
+// Any deliberate navigation hides it too, so it never lingers as clutter.
+for (const btn of document.querySelectorAll(".navbtn[data-view]")) {
+  btn.addEventListener("click", () => {
+    $("back-to-learn").hidden = true;
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Test view

@@ -51,6 +51,7 @@ const ids = [
   "payload", "signature", "check-payload", "clear-payload",
   "check-onchain", "check-spenders", "check-liveness",
   "payload-out", "rpc-url", "rpc-apply", "rpc-status", "share-payload",
+  "back-to-learn",
   "address", "exp-name", "exp-version", "inspect", "contract-out",
   // learn view
   "sample-drain", "sample-safe", "sample-reset",

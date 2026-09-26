@@ -68,6 +68,12 @@ No request handy? Use the Learn tab to see real examples.'></textarea>
 
     <output id="payload-out" class="out" aria-live="polite"></output>
 
+    <!-- Appears only after arriving from a Learn example, so a first-time visitor
+         does not see navigation they did not ask for. -->
+    <p class="backbar" id="back-to-learn" hidden>
+      <button type="button" class="secondary" id="sample-reset">← Back to the examples</button>
+    </p>
+
     <details class="quiet">
       <summary>I only have a contract address, not a request</summary>
       <p class="hint">
@@ -154,8 +160,11 @@ No request handy? Use the Learn tab to see real examples.'></textarea>
       <div class="row">
         <button type="button" id="sample-drain">Load a drain-shaped permit</button>
         <button type="button" class="secondary" id="sample-safe">Load an ordinary message</button>
-        <button type="button" class="secondary" id="sample-reset">Back to Learn</button>
       </div>
+      <p class="hint">
+        Loading one takes you to the checker. Nothing is signed, and there is a
+        way back from there.
+      </p>
     </section>
 
     <p class="dim more-label">Want the detail?</p>

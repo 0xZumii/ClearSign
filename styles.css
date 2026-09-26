@@ -181,6 +181,10 @@ button.secondary { background: #1b2230; color: var(--text); font-weight: 600; }
 .more dl { margin-top: 0.8rem; }
 .more dd { margin-bottom: 0.8rem; }
 
+/* The way back, shown on Check only after arriving from an example. */
+.backbar { margin: 1rem 0 0; }
+.backbar button { font-size: 0.85rem; padding: 0.45rem 0.9rem; }
+
 .learn-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
 .learn-table th {
   text-align: left;
