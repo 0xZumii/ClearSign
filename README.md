@@ -31,6 +31,45 @@ nicer interface.
 The other tab verifies a contract: paste an address, get the declared domain,
 the on-chain separator, the recomputed separator, and whether they match.
 
+## Scope: EVM chains, and why not others
+
+ClearSign checks **EVM chains**. It works anywhere EIP-712 signatures are used,
+because that standard defines exactly how the hash is computed — which is what
+makes a definitive answer possible.
+
+Chains without an equivalent standard are **not unsupported, they are
+uncheckable**, and pretending otherwise would produce confident nonsense:
+
+- **Solana** has no standardised typed-data signing. A signature there is opaque
+  bytes that only the program can interpret, and there is no domain separator to
+  compare against. A Solana drain is usually an *approved transaction*, not an
+  off-chain signature, so inspecting one is a transaction-decoding problem — a
+  different tool with different inputs.
+- **Bitcoin and similar** have no on-chain contract to query at all.
+
+On an EVM chain, ClearSign also refuses to guess: it reads the endpoint's own
+chain id and reports `WRONG CHAIN` if that does not match the payload's
+`chainId`, because every other read describes whatever contract sits at that
+address *on the endpoint's chain*.
+
+## What the wallet already tells you
+
+MetaMask and similar wallets have improved. A modern prompt says "Spending cap:
+Unlimited", names the spender, and shows the network. If the wallet already says
+it, ClearSign repeating it adds nothing.
+
+What a wallet **cannot** do, because it would require querying the chain:
+
+| ClearSign adds | Why the wallet can't |
+| :--- | :--- |
+| Whether the permit has been submitted yet | Needs `nonces(owner)` — the wallet calls nothing |
+| Whether it expires, or never can | Needs the `deadline` interpreted, not just displayed |
+| Whether the contract will *accept* the signature | Needs the separator compared |
+| The spender's history — code size, transactions sent | Needs `eth_getCode` and `eth_getTransactionCount` |
+
+So the tool's job is the part the wallet is silent about, not the part it already
+covered.
+
 ## Quick start
 
 No build step, no dependencies, no API key.

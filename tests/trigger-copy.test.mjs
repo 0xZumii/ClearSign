@@ -15,6 +15,7 @@ import { readFile } from "node:fs/promises";
 const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const sign = await readFile(new URL("../sign.html", import.meta.url), "utf8");
 const signJs = await readFile(new URL("../sign.js", import.meta.url), "utf8");
+const appJs = await readFile(new URL("../app.js", import.meta.url), "utf8");
 
 test("the trigger is labelled as a test, not as an ordinary example", () => {
   assert.match(index, /id="open-trigger"/);
@@ -43,10 +44,20 @@ test("the trigger only asks for typed-data signing, never a transaction", () => 
   assert.match(signJs, /eth_signTypedData_v4/);
 });
 
-test("the trigger offers Robinhood Chain, since the user hit that case", () => {
-  assert.match(signJs, /rpc\.mainnet\.chain\.robinhood\.com/);
-  assert.match(signJs, /0x1237/); // chainId 4663, hex
+test("the trigger never asks the wallet to add a chain", () => {
+  // Robinhood Chain and the common networks are already in modern wallets, and
+  // "a site wants to add a network" is itself a drainer pattern. A security tool
+  // must not teach that prompt.
+  assert.doesNotMatch(signJs, /wallet_addEthereumChain/);
+  assert.doesNotMatch(sign, /Add Robinhood Chain/i);
+  assert.match(sign, /never asks you\s+to add a chain/i);
+});
+
+test("Robinhood Chain is still documented as a recognised chain", () => {
+  // It is a real chain and the user hit it, so it is named -- in app.js's chain
+  // list and in the help text -- without offering to add it.
   assert.match(index, /4663/);
+  assert.match(appJs, /4663/);
 });
 
 test("the chain-mismatch explanation is present where a user will look", () => {

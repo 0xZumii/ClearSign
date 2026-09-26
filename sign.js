@@ -15,12 +15,7 @@ function escapeHtml(text) {
   );
 }
 
-const ROBINHOOD_CHAIN = {
-  chainId: "0x1237", // 4663
-  chainName: "Robinhood Chain",
-  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-  rpcUrls: ["https://rpc.mainnet.chain.robinhood.com"],
-};
+const ROBINHOOD_CHAIN_ID = 4663; // 0x1237
 
 /** The canonical drain shape: unlimited allowance, never expires. */
 function unlimitedPermit(chainId, verifyingContract) {
@@ -110,27 +105,23 @@ $("connect").addEventListener("click", async () => {
   }
 });
 
-$("add-robinhood").addEventListener("click", async () => {
-  if (!window.ethereum) return;
-  try {
-    await window.ethereum.request({
-      method: "wallet_addEthereumChain",
-      params: [ROBINHOOD_CHAIN],
-    });
-    await refreshWallet();
-  } catch (error) {
-    $("wallet-status").textContent = `could not add chain: ${error.message}`;
-    $("wallet-status").className = "hint bad";
-  }
-});
+// Deliberately NO "add chain" button. Robinhood Chain and the other common
+// networks are already in any modern wallet, and "a site wants to add a network"
+// is itself a drainer pattern -- teaching someone to click that prompt while
+// they are on a security tool would be actively harmful. The page reads whatever
+// chain the wallet is on instead.
 
 for (const btn of document.querySelectorAll("[data-sample]")) {
   btn.addEventListener("click", () => {
     const chainId = currentChainId ?? 1;
+    // Point the example at the address the sample is meaningful on. On Ethereum
+    // that is real USDC; elsewhere no token exists at that address, so the
+    // example says so by using a placeholder -- an example must not imply a real
+    // contract exists on a chain it does not.
     const verifying =
-      document.querySelector("#payload") && chainId !== 1
-        ? "0x0000000000000000000000000000000000000001"
-        : "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+      chainId === 1
+        ? "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        : "0x0000000000000000000000000000000000000001";
     if (btn.dataset.sample === "permit") render(unlimitedPermit(chainId, verifying));
     if (btn.dataset.sample === "harmless") render(harmlessMessage(chainId, verifying));
     if (btn.dataset.sample === "local") render(harmlessMessage(chainId, verifying));
