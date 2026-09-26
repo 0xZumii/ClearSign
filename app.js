@@ -10,6 +10,55 @@ let rpc = new Rpc();
 
 const $ = (id) => document.getElementById(id);
 
+/**
+ * Worked examples, so the page can be understood without a real request in hand.
+ * The drain one is a genuine USDC Permit asking for an unlimited, never-expiring
+ * allowance: every check should fire on it, which is the best way to see what
+ * the tool does.
+ */
+const SAMPLES = {
+  drain: {
+    types: {
+      EIP712Domain: [
+        { name: "name", type: "string" },
+        { name: "version", type: "string" },
+        { name: "chainId", type: "uint256" },
+        { name: "verifyingContract", type: "address" },
+      ],
+      Permit: [
+        { name: "owner", type: "address" },
+        { name: "spender", type: "address" },
+        { name: "value", type: "uint256" },
+        { name: "nonce", type: "uint256" },
+        { name: "deadline", type: "uint256" },
+      ],
+    },
+    primaryType: "Permit",
+    domain: {
+      name: "USD Coin",
+      version: "2",
+      chainId: 1,
+      verifyingContract: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    },
+    message: {
+      owner: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      spender: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+      value: "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+      nonce: "0",
+      deadline: "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+    },
+  },
+  safe: {
+    types: {
+      EIP712Domain: [{ name: "name", type: "string" }],
+      Mail: [{ name: "contents", type: "string" }],
+    },
+    primaryType: "Mail",
+    domain: { name: "Example App" },
+    message: { contents: "hello, this signature moves nothing" },
+  },
+};
+
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
@@ -153,6 +202,18 @@ function renderPayload(result) {
     ])
   );
 
+  // Chain identity comes first: if the endpoint is on another chain, nothing
+  // below describes the contract you think it does.
+  if (result.chain?.matches === false) {
+    parts.push(
+      `<p><span class="pill high">WRONG CHAIN</span> <span class="dim">endpoint is on chain ${escapeHtml(result.chain.endpointChainId)}, payload says ${escapeHtml(result.chain.claimedChainId)}</span></p>`
+    );
+  } else if (result.chain?.matches === true) {
+    parts.push(
+      `<p><span class="pill ok">chain ${escapeHtml(result.chain.endpointChainId)} — matches the payload</span></p>`
+    );
+  }
+
   // The message fields are the part that can actually cost money, so they get
   // their own block rather than being folded into the summary above. The domain
   // check says nothing about them.
@@ -249,13 +310,26 @@ $("rpc-apply").addEventListener("click", async () => {
   await showRpcStatus();
 });
 
+/** Chain names, so a non-Ethereum endpoint is identifiable at a glance. */
+const CHAIN_NAMES = {
+  1: "Ethereum mainnet",
+  10: "OP Mainnet",
+  56: "BNB Chain",
+  137: "Polygon",
+  8453: "Base",
+  42161: "Arbitrum One",
+  4663: "Robinhood Chain",
+  43114: "Avalanche C-Chain",
+};
+
 async function showRpcStatus() {
   const status = $("rpc-status");
   status.textContent = "checking…";
   status.className = "hint";
   try {
     const chainId = await rpc.chainId();
-    status.textContent = `connected — chainId ${chainId} via ${rpc.lastUrl}`;
+    const name = CHAIN_NAMES[chainId] ? ` (${CHAIN_NAMES[chainId]})` : "";
+    status.textContent = `connected — chain ${chainId}${name} via ${rpc.lastUrl}`;
     status.className = "hint ok-text";
   } catch (error) {
     status.textContent = String(error.message ?? error);
@@ -307,6 +381,26 @@ $("check-payload").addEventListener("click", async () => {
   } catch (error) {
     failed(out, error);
   }
+});
+
+for (const [id, key] of [["sample-drain", "drain"], ["sample-safe", "safe"]]) {
+  $(id).addEventListener("click", () => {
+    $("payload").value = JSON.stringify(SAMPLES[key], null, 2);
+    $("signature").value = "";
+    $("check-payload").click();
+  });
+}
+
+// The test trigger. It stays on the page rather than navigating immediately,
+// because the explanation is the point: a user who does not know they can
+// produce a signature prompt on demand cannot test anything.
+$("open-trigger").addEventListener("click", () => {
+  const note = $("trigger-note");
+  note.hidden = !note.hidden;
+  if (!note.hidden) note.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
+$("close-trigger").addEventListener("click", () => {
+  $("trigger-note").hidden = true;
 });
 
 for (const tab of document.querySelectorAll(".tab")) {

@@ -10,9 +10,9 @@
   },
   "scripts": {
     "serve": "node scripts/serve.mjs",
-    "test": "node --test tests/spec-vector.test.mjs tests/render.test.mjs",
+    "test": "node --test tests/spec-vector.test.mjs tests/render.test.mjs tests/trigger-copy.test.mjs",
     "test:live": "node --test tests/live.test.mjs",
-    "test:all": "node --test tests/spec-vector.test.mjs tests/render.test.mjs tests/live.test.mjs"
+    "test:all": "node --test tests/spec-vector.test.mjs tests/render.test.mjs tests/trigger-copy.test.mjs tests/live.test.mjs"
   },
   "license": "MIT"
 }

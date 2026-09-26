@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ClearSign — EIP-712 Inspector</title>
-<meta name="description" content="Recompute EIP-712 domain separators and compare them against what a contract verifies on-chain. Reports what it could not see rather than assuming safety." />
+<title>ClearSign — check what a signature actually does</title>
+<meta name="description" content="Paste a signing request and see what it authorises, whether the contract will accept it, and whether it can be used against you later." />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -87,6 +87,39 @@
       Paste what your wallet is showing you, before you sign it. The signature
       field is optional — with it, the signer is recovered.
     </p>
+
+    <details class="expected">
+      <summary>Where do I find this? What if my chain isn't Ethereum?</summary>
+      <div class="hint">
+        <p>
+          <strong>Finding the request.</strong> When a site asks you to sign,
+          your wallet shows a prompt with the fields and the contract address.
+          Copy that JSON. If the site only shows you a summary, open your
+          wallet's detailed view — the address is labelled
+          <code>verifyingContract</code>.
+        </p>
+        <p>
+          <strong>Other chains.</strong> Put your chain's RPC endpoint in the
+          box at the top first — the page checks that the endpoint's chain
+          matches the <code>chainId</code> in the payload, and will refuse to
+          pretend otherwise. For Robinhood Chain, that endpoint is
+          <code>rpc.mainnet.chain.robinhood.com</code> and the chain id is
+          <code>4663</code>.
+        </p>
+        <p>
+          <strong>Chain names this page recognises</strong> are shown next to
+          the connection status. An unrecognised chain still works, it just
+          isn't named.
+        </p>
+      </div>
+    </details>
+
+    <div class="row samples">
+      <span class="dim">No request handy? Try one:</span>
+      <button type="button" class="secondary" id="sample-drain">a drain-shaped permit</button>
+      <button type="button" class="secondary" id="sample-safe">an ordinary message</button>
+      <button type="button" class="secondary test-trigger" id="open-trigger">⚑ make a real signing prompt</button>
+    </div>
     <textarea id="payload" rows="12" spellcheck="false"
       placeholder='{"types":{...},"primaryType":"Permit","domain":{...},"message":{...}}'></textarea>
 
@@ -109,6 +142,43 @@
     </label>
 
     <output id="payload-out" class="out" aria-live="polite"></output>
+
+    <section class="trigger-note" id="trigger-note" hidden>
+      <div class="trigger-head">
+        <span class="pill notable">test trigger</span>
+        <strong>Producing a signature prompt to check</strong>
+      </div>
+      <p class="dim">
+        Real dapps usually gate the signing step behind eligibility — a balance,
+        an allowlist, a mint window — so you often cannot reach a signature
+        prompt on demand just to look at one. The trigger page calls
+        <code>eth_signTypedData_v4</code> directly with a payload you control, so
+        you can see exactly what a wallet shows you.
+      </p>
+      <ul class="dim">
+        <li>
+          <strong>It sends no transaction and spends no gas.</strong> A typed-data
+          signature is off-chain.
+        </li>
+        <li>
+          <strong>But a signature is still authorisation.</strong> That is the whole
+          reason this tool exists — never sign a payload you do not understand.
+        </li>
+        <li>
+          <strong>The examples point at example contracts</strong>, so signing them
+          cannot move anything.
+        </li>
+        <li>
+          Once you have signed, <strong>copy the payload back here</strong> to see
+          what it authorised, whether the contract would accept it, and whether it
+          can be used against you later.
+        </li>
+      </ul>
+      <div class="row">
+        <a class="btn-like" href="./sign.html">Open the test trigger →</a>
+        <button type="button" class="secondary" id="close-trigger">dismiss</button>
+      </div>
+    </section>
   </section>
 
   <section class="how">

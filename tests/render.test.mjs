@@ -50,6 +50,7 @@ const ids = [
   "rpc-url", "rpc-apply", "rpc-status", "address", "inspect",
   "exp-name", "exp-version", "contract-out", "payload", "signature",
   "check-payload", "check-onchain", "check-spenders", "check-liveness", "payload-out",
+  "sample-drain", "sample-safe", "open-trigger", "close-trigger", "trigger-note",
 ];
 
 function makeDom() {
@@ -186,7 +187,7 @@ async function renderPayload(payload, options = {}) {
     getTransactionCount: Rpc.prototype.getTransactionCount,
     getBalance: Rpc.prototype.getBalance,
   };
-  Rpc.prototype.chainId = async () => 1;
+  Rpc.prototype.chainId = async () => options.chainIdReturns ?? 1;
   Rpc.prototype.callContract = async (_to, data) => {
     // Permit-liveness reads, matched by their derived selectors.
     const sel = String(data).slice(0, 10);
@@ -431,6 +432,31 @@ test("an unlimited field is recognised by name, not by magnitude alone", async (
   payload.message.expiry = (2n ** 256n - 1n).toString();
   const text = await renderPayload(payload, {});
   assert.doesNotMatch(text, /UNLIMITED at 'expiry'/i);
+});
+
+test("a chain mismatch is flagged before any other reassurance", async () => {
+  // The bug a real user hit: a valid non-Ethereum endpoint (Robinhood Chain)
+  // against a mainnet payload. Every other read would describe a different
+  // contract, so this must be loud and must not coexist with a reassuring line.
+  const text = await renderPayload(DRAIN_PAYLOAD, {
+    chainIdReturns: 4663,
+    checkOnchain: true,
+    separator: "0x06c37168a7db5138defc7866392bb87a741f9b3d104deb5094588ce041cae335",
+  });
+  assert.match(text, /WRONG CHAIN/);
+  assert.match(text, /endpoint is on chain 4663/i);
+  assert.match(text, /payload says 1/i);
+  assert.doesNotMatch(text, /matches the payload/i);
+});
+
+test("a matching chain is stated positively", async () => {
+  const text = await renderPayload(DRAIN_PAYLOAD, {
+    chainIdReturns: 1,
+    checkOnchain: true,
+    separator: "0x06c37168a7db5138defc7866392bb87a741f9b3d104deb5094588ce041cae335",
+  });
+  assert.match(text, /chain 1 — matches the payload/i);
+  assert.doesNotMatch(text, /WRONG CHAIN/);
 });
 
 test("a wrong name renders as incompatible, loudly", async () => {
