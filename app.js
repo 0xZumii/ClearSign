@@ -84,16 +84,59 @@ function activeWalletName() {
 
 function discoverWallets(onChange) {
   const seen = new Set();
-  window.addEventListener("eip6963:announceProvider", (event) => {
+
+  /**
+   * Only keep wallets that can actually answer an EVM call.
+   *
+   * Multi-chain wallets announce an Ethereum provider whether or not they are
+   * currently pointed at an EVM network -- Tezos and Solana wallets included,
+   * since that is what the spec says a provider should do. But this page signs
+   * typed data, which a wallet sitting on a non-EVM chain cannot do. Listing it
+   * would offer a choice that fails on click.
+   *
+   * The test is a capability, not a name: a wallet that cannot answer
+   * eth_chainId cannot help here. The spec explicitly says rdns must not be used
+   * for feature detection (it is self-attested and imitable), so there is no
+   * allowlist of "real EVM wallets" -- and it would rot if there were.
+   */
+  const admits = (provider) =>
+    new Promise((resolve) => {
+      if (!provider?.request) return resolve(false);
+      let settled = false;
+      const done = (ok) => {
+        if (settled) return;
+        settled = true;
+        resolve(ok);
+      };
+      // A wallet that never answers must not stall the list forever.
+      const timer = setTimeout(() => done(false), 1500);
+      Promise.resolve()
+        .then(() => provider.request({ method: "eth_chainId" }))
+        .then((id) => {
+          clearTimeout(timer);
+          done(typeof id === "string" && /^0x[0-9a-f]+$/i.test(id));
+        })
+        .catch(() => {
+          clearTimeout(timer);
+          done(false);
+        });
+    });
+
+  window.addEventListener("eip6963:announceProvider", async (event) => {
     const detail = event.detail;
-    // A uuid can be reused by an imitator, so dedupe or the list gets flooded.
+    // Duplicates must be dropped by uuid: some wallets re-announce on every
+    // request, and a list showing the same wallet five times is worse than useless.
     if (!detail?.info?.uuid || seen.has(detail.info.uuid)) return;
     seen.add(detail.info.uuid);
-    discovered.push(detail);
-    onChange?.();
+    if (await admits(detail.provider)) {
+      discovered.push(detail);
+      onChange?.();
+    }
   });
+
   window.dispatchEvent(new Event("eip6963:requestProvider"));
-  // Legacy wallets never announce; give the standard ones a moment first.
+
+  // Legacy wallets never announce. Give the standard ones a moment first.
   setTimeout(() => {
     if (!discovered.length && window.ethereum) onChange?.();
   }, 300);
@@ -145,7 +188,14 @@ function renderWalletPicker() {
           ${escapeHtml(d.info.name)}
         </button>`;
       })
-      .join("");
+      .join("") +
+    // Say why a wallet the user owns may be missing. Otherwise an absent Temple
+    // or Phantom reads as a bug rather than as "that one is on another chain".
+    `<p class="hint">Only wallets currently on an EVM network are listed. A
+      multi-chain wallet that is sitting on a non-EVM chain, or one that cannot
+      sign Ethereum typed data, is left out — switch it to an EVM network and
+      reload if you expected it here.</p>`;
+
   for (const btn of box.querySelectorAll(".wallet-choice")) {
     btn.addEventListener("click", async () => {
       selectedUuid = btn.dataset.uuid;

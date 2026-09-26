@@ -103,6 +103,29 @@ test("sharing is explicit and warns what the link contains", () => {
   assert.match(index, /id="share-payload"/);
 });
 
+test("only wallets that can answer an EVM call are listed", () => {
+  // Temple announces an Ethereum provider because it is a multichain wallet for
+  // Tezos AND EVM -- that is what the spec asks of it. But a wallet sitting on
+  // Tezos cannot sign Ethereum typed data, so offering it produces a choice that
+  // fails on click.
+  assert.match(appJs, /const admits/);
+  assert.match(appJs, /provider\.request\(\{ method: "eth_chainId" \}\)/);
+  // The spec says rdns is self-attested and must not drive feature detection,
+  // so there must be no name allowlist.
+  assert.doesNotMatch(appJs, /io\.metamask|com\.rabby|"temple"/i);
+});
+
+test("a wallet that never answers does not stall the list", () => {
+  assert.match(appJs, /setTimeout\(\(\) => done\(false\), 1500\)/);
+});
+
+test("the picker explains why an owned wallet may be absent", () => {
+  // Otherwise a missing Temple or Phantom reads as a bug rather than as
+  // "that one is on another chain".
+  assert.match(appJs, /Only wallets currently on an EVM network are listed/);
+  assert.match(appJs, /switch it to an EVM network/i);
+});
+
 test("the Learn tab covers hygiene beyond any single signature", () => {
   // The user asked for this: the habits that protect you when a check is fooled.
   assert.match(index, /Habits that matter more than any single check/i);
