@@ -73,30 +73,131 @@ function harmlessMessage(chainId, verifyingContract) {
 let account = null;
 let currentChainId = null;
 
+/**
+ * Multiple injected wallets.
+ *
+ * With two wallet extensions installed, both write to `window.ethereum` and
+ * whichever loads last wins — the user gets a random one and no say in it. That
+ * is the problem EIP-6963 exists to solve, and its whole point is that a wallet
+ * is NOT a MetaMask-shaped thing: Rabby, Frame, Coinbase Wallet, Brave's
+ * built-in wallet and browser-native wallets all announce themselves the same
+ * way. `window.ethereum` stays as a fallback for wallets that predate the
+ * standard.
+ */
+const discovered = [];
+
+export function wallets() {
+  return discovered;
+}
+
+export function selected() {
+  return discovered.find((d) => d.info.uuid === selectedUuid)?.provider ?? null;
+}
+
+let selectedUuid = null;
+
+export function selectWallet(uuid) {
+  selectedUuid = uuid;
+}
+
+/** The provider to use: an explicit choice, else the first discovered, else legacy. */
+export function activeProvider() {
+  return selected() ?? discovered[0]?.provider ?? window.ethereum ?? null;
+}
+
+export function activeWalletName() {
+  const chosen = discovered.find((d) => d.info.uuid === selectedUuid);
+  if (chosen) return chosen.info.name;
+  return discovered[0]?.info.name ?? (window.ethereum ? "a browser wallet" : null);
+}
+
+/** Start discovery. Safe to call before any wallet has announced. */
+export function discoverWallets(onChange) {
+  const seen = new Set();
+  const record = (detail) => {
+    // The spec warns that a uuid can be reused by an imitator; dedupe on it so
+    // the list cannot be flooded with clones of one wallet.
+    if (!detail?.info?.uuid || seen.has(detail.info.uuid)) return;
+    seen.add(detail.info.uuid);
+    discovered.push(detail);
+    onChange?.();
+  };
+
+  window.addEventListener("eip6963:announceProvider", (event) => record(event.detail));
+  window.dispatchEvent(new Event("eip6963:requestProvider"));
+
+  // Legacy wallets never announce. Give the standard ones a moment, then fall
+  // back so a single-wallet user is not left staring at an empty picker.
+  setTimeout(() => {
+    if (!discovered.length && window.ethereum) onChange?.();
+  }, 300);
+}
+
 function render(payload) {
   $("payload").value = JSON.stringify(payload, null, 2);
 }
 
 async function refreshWallet() {
-  if (!window.ethereum) {
-    $("wallet-status").textContent = "no wallet detected — install MetaMask, or open this in a wallet browser";
+  const provider = activeProvider();
+  if (!provider) {
+    $("wallet-status").textContent =
+      "no wallet detected — install any EVM wallet, or open this page in one's built-in browser";
     $("wallet-status").className = "hint bad";
+    renderWalletPicker();
     return;
   }
-  const accounts = await window.ethereum.request({ method: "eth_accounts" });
-  account = accounts?.[0] ?? null;
-  const chainHex = await window.ethereum.request({ method: "eth_chainId" });
-  currentChainId = Number(BigInt(chainHex));
-  $("wallet-status").textContent = account
-    ? `connected ${account.slice(0, 6)}…${account.slice(-4)} on chain ${currentChainId}`
-    : "wallet detected but not connected";
-  $("wallet-status").className = account ? "hint ok-text" : "hint";
+  try {
+    const accounts = await provider.request({ method: "eth_accounts" });
+    account = accounts?.[0] ?? null;
+    const chainHex = await provider.request({ method: "eth_chainId" });
+    currentChainId = Number(BigInt(chainHex));
+    const name = activeWalletName();
+    $("wallet-status").textContent = account
+      ? `connected ${account.slice(0, 6)}…${account.slice(-4)} on chain ${currentChainId}${name ? ` via ${name}` : ""}`
+      : `${name ?? "wallet"} detected but not connected`;
+    $("wallet-status").className = account ? "hint ok-text" : "hint";
+  } catch (error) {
+    $("wallet-status").textContent = `could not read the wallet: ${error.message}`;
+    $("wallet-status").className = "hint bad";
+  }
+  renderWalletPicker();
+}
+
+/** Show a picker only when there is an actual choice to make. */
+function renderWalletPicker() {
+  const box = $("wallet-picker");
+  if (!box) return;
+  if (discovered.length < 2) {
+    box.hidden = true;
+    box.innerHTML = "";
+    return;
+  }
+  box.hidden = false;
+  box.innerHTML =
+    `<label>Wallet</label>` +
+    discovered
+      .map((d, i) => {
+        const isActive = selectedUuid ? d.info.uuid === selectedUuid : i === 0;
+        return `<button type="button" class="wallet-choice${isActive ? " active" : ""}" data-uuid="${escapeHtml(d.info.uuid)}">
+          <img src="${escapeHtml(d.info.icon)}" alt="" width="20" height="20" />
+          ${escapeHtml(d.info.name)}
+        </button>`;
+      })
+      .join("");
+  for (const btn of box.querySelectorAll(".wallet-choice")) {
+    btn.addEventListener("click", async () => {
+      selectWallet(btn.dataset.uuid);
+      account = null;
+      await refreshWallet();
+    });
+  }
 }
 
 $("connect").addEventListener("click", async () => {
-  if (!window.ethereum) return refreshWallet();
+  const provider = activeProvider();
+  if (!provider) return refreshWallet();
   try {
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    const accounts = await provider.request({ method: "eth_requestAccounts" });
     account = accounts?.[0] ?? null;
     await refreshWallet();
   } catch (error) {
@@ -168,8 +269,9 @@ $("payload").addEventListener("input", () => syncHandoff());
 
 $("sign").addEventListener("click", async () => {
   const out = $("out");
-  if (!window.ethereum) {
-    out.innerHTML = `<div class="card"><p class="bad">No wallet detected.</p></div>`;
+  const provider = activeProvider();
+  if (!provider) {
+    out.innerHTML = `<div class="card"><p class="bad">No EVM wallet detected.</p></div>`;
     return;
   }
   let payload;
@@ -180,7 +282,7 @@ $("sign").addEventListener("click", async () => {
     return;
   }
 
-  const [from] = await window.ethereum.request({ method: "eth_requestAccounts" });
+  const [from] = await provider.request({ method: "eth_requestAccounts" });
   // The signer is whoever is connected, so the payload's owner must be them or
   // the wallet may refuse. Replace the owner field rather than failing opaquely.
   if (payload?.message?.owner && /^0x[0-9a-fA-F]{40}$/.test(payload.message.owner)) {
@@ -189,7 +291,7 @@ $("sign").addEventListener("click", async () => {
   }
 
   try {
-    const signature = await window.ethereum.request({
+    const signature = await provider.request({
       method: "eth_signTypedData_v4",
       params: [from, JSON.stringify(payload)],
     });
@@ -209,6 +311,11 @@ $("sign").addEventListener("click", async () => {
 });
 
 // Populate something to look at immediately, then reflect the wallet's chain.
+discoverWallets(() => {
+  if (account) return; // already connected; re-rendering would fight the user
+  refreshWallet();
+});
+
 refreshWallet().then(() => {
   if (!$("payload").value) {
     render(unlimitedPermit(currentChainId ?? 1, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"));
@@ -219,7 +326,10 @@ refreshWallet().then(() => {
   syncHandoff();
 });
 
-if (window.ethereum?.on) {
-  window.ethereum.on("chainChanged", () => refreshWallet());
-  window.ethereum.on("accountsChanged", () => refreshWallet());
+// Re-read state when the active wallet changes either of these.
+function watchProvider(provider) {
+  if (!provider?.on) return;
+  provider.on("chainChanged", () => refreshWallet());
+  provider.on("accountsChanged", () => refreshWallet());
 }
+watchProvider(activeProvider());

@@ -142,6 +142,25 @@ button.secondary { background: #1b2230; color: var(--text); font-weight: 600; }
   text-decoration: none;
 }
 .btn-like:hover { filter: brightness(1.08); }
+
+/* Wallet picker: only rendered when more than one wallet is present, because a
+   choice between one option is noise. */
+#wallet-picker { margin-top: 0.8rem; }
+#wallet-picker label { display: block; font-weight: 600; font-size: 0.78rem; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.4rem; }
+.wallet-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0.4rem 0.4rem 0;
+  padding: 0.4rem 0.8rem;
+  background: #0d1117;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.wallet-choice.active { border-color: var(--accent); color: var(--text); }
+.wallet-choice img { border-radius: 4px; }
 .expected .hint p { margin: 0 0 0.5rem; }
 .expected .hint p:last-child { margin-bottom: 0; }
 
