@@ -48,6 +48,7 @@ No request handy? Use the Learn tab to see real examples.'></textarea>
              placeholder="signature (optional), 0x… 65 bytes" />
       <button id="check-payload" type="button">Check</button>
       <button type="button" class="secondary" id="clear-payload">Clear</button>
+      <button type="button" class="secondary" id="share-payload">Share</button>
     </div>
 
     <div class="options">
@@ -161,6 +162,24 @@ No request handy? Use the Learn tab to see real examples.'></textarea>
           the maximum number means <em>never expires</em>.
         </dd>
       </dl>
+      <p class="dim" style="margin-top:0.9rem">
+        So "how long is this open for?" has three answers, and ClearSign says
+        which one applies:
+      </p>
+      <table class="learn-table">
+        <thead><tr><th>The deadline says</th><th>Which means</th></tr></thead>
+        <tbody>
+          <tr><td>the maximum number</td><td><strong>Never expires</strong> — usable until the nonce is spent, which may be never</td></tr>
+          <tr><td>a time in the future</td><td>Usable until then, and ClearSign says roughly how far away</td></tr>
+          <tr><td>a time in the past</td><td>Already expired — it can no longer be submitted</td></tr>
+        </tbody>
+      </table>
+      <p class="hint">
+        Separately, ClearSign reads the allowance <em>right now</em>. That shows
+        what is already open, which is not the same as what this signature would
+        open — a permission granted last year is live whether or not you still
+        have the signature.
+      </p>
     </section>
 
     <section class="learn-item">
@@ -180,6 +199,64 @@ No request handy? Use the Learn tab to see real examples.'></textarea>
           <tr><td>The spender's history</td><td>Needs to read code size and transaction count</td></tr>
         </tbody>
       </table>
+    </section>
+
+    <section class="learn-item">
+      <h2>Habits that matter more than any single check</h2>
+      <p class="dim">
+        ClearSign helps with one moment: the second before you sign. Everything
+        below is what protects you the rest of the time. These matter more,
+        because they hold even when a check is fooled.
+      </p>
+      <dl>
+        <dt>Keep a burner for anything new</dt>
+        <dd>
+          A wallet holding nothing you would miss. Sign every first interaction
+          — new site, new mint, new contract — with the burner, then move what
+          survived. Most drains only take what the signing wallet holds.
+        </dd>
+
+        <dt>Revoke regularly, not just after a scare</dt>
+        <dd>
+          An unlimited allowance is a standing permission. It keeps working
+          whether or not you remember granting it. Revoking costs gas and takes
+          a minute; a forgotten allowance can cost the balance. This is the
+          habit ClearSign's "never expires" finding most directly argues for.
+        </dd>
+
+        <dt>One wallet per job</dt>
+        <dd>
+          A wallet you only use for long-term holding should never sign anything
+          at all. If it never connects to a site, nothing can ask it for a
+          permission. The strongest hygiene is a key that stays offline.
+        </dd>
+
+        <dt>Read the prompt, not the vibe</dt>
+        <dd>
+          A clean-looking site behind a well-known brand tells you nothing — the
+          front end can be cloned wholesale. What the wallet actually asks for is
+          the only thing that cannot be faked.
+        </dd>
+
+        <dt>Be suspicious of a chain prompt</dt>
+        <dd>
+          "This site wants to add a network" or "switch network" is a common step
+          in switching you onto a chain where the attacker's contract lives.
+          ClearSign never asks you to add a chain, and neither should anything
+          you did not explicitly go looking for.
+        </dd>
+
+        <dt>Small balances, separate keys</dt>
+        <dd>
+          Assume any wallet that signs will eventually be drained. Decide in
+          advance how much that costs you, and keep it small. This is the same
+          idea as a burner, applied permanently rather than per-interaction.
+        </dd>
+      </dl>
+      <p class="hint">
+        None of this is a substitute for the check, and the check is no
+        substitute for this. Both exist because the other one fails sometimes.
+      </p>
     </section>
 
     <section class="learn-item">

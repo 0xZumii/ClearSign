@@ -84,6 +84,42 @@ test("a contract that cannot be verified says where the name comes from", () => 
   assert.match(appJs, /name\(\)<\/code> on the token/);
 });
 
+test("a payload never reaches the URL on its own", () => {
+  // It used to live in the fragment so a second page could read it. That put a
+  // request containing an address and an unlimited spender into the address bar
+  // and browser history. The in-memory handoff made it unnecessary.
+  assert.doesNotMatch(appJs, /location\.hash\s*=[^=]*payload/i);
+  assert.doesNotMatch(appJs, /params\.set\("payload"\)[\s\S]{0,80}location\.hash/);
+  // And any stale fragment is cleared on load.
+  assert.match(appJs, /history\.replaceState/);
+});
+
+test("sharing is explicit and warns what the link contains", () => {
+  // Sharing is genuinely useful, so it exists -- but it must never be silent
+  // about carrying the spender address.
+  assert.match(appJs, /share-payload/);
+  assert.match(appJs, /It contains the whole request/i);
+  assert.match(appJs, /treat the link\s+itself as sensitive/i);
+  assert.match(index, /id="share-payload"/);
+});
+
+test("the Learn tab covers hygiene beyond any single signature", () => {
+  // The user asked for this: the habits that protect you when a check is fooled.
+  assert.match(index, /Habits that matter more than any single check/i);
+  assert.match(index, /burner/i);
+  assert.match(index, /Revoke regularly/i);
+  assert.match(index, /One wallet per job/i);
+  // And the honest framing that neither replaces the other.
+  assert.match(index, /no\s+substitute for this/i);
+});
+
+test("the Learn tab answers how long a permission stays open", () => {
+  assert.match(index, /how long is this open for/i);
+  assert.match(index, /Never expires/i);
+  assert.match(index, /Already expired/i);
+  assert.match(index, /allowance <em>right now<\/em>/i);
+});
+
 test("the RPC field is pastable but tucked away, and still validates", () => {
   // It was liked, then hidden too well, then hoisted above the tool. It belongs
   // in the Check view, available, below the thing people came to use.

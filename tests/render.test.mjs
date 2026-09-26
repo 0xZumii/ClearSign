@@ -50,7 +50,7 @@ const ids = [
   // check view
   "payload", "signature", "check-payload", "clear-payload",
   "check-onchain", "check-spenders", "check-liveness",
-  "payload-out", "rpc-url", "rpc-apply", "rpc-status",
+  "payload-out", "rpc-url", "rpc-apply", "rpc-status", "share-payload",
   "address", "exp-name", "exp-version", "inspect", "contract-out",
   // learn view
   "sample-drain", "sample-safe",

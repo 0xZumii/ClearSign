@@ -459,6 +459,36 @@ $("clear-payload").addEventListener("click", () => {
   $("payload-out").innerHTML = "";
 });
 
+/**
+ * Sharing is explicit and warned about, because a payload can contain an
+ * address and an unlimited spender. Putting that in a URL by default would leak
+ * it into browser history and anything the link is pasted into.
+ */
+$("share-payload").addEventListener("click", async () => {
+  const out = $("payload-out");
+  let parsed;
+  try {
+    parsed = JSON.parse($("payload").value);
+  } catch {
+    failed(out, new Error("Nothing valid to share yet."));
+    return;
+  }
+  const params = new URLSearchParams();
+  params.set("payload", JSON.stringify(parsed));
+  const url = `${location.origin}${location.pathname}?payload=${params.get("payload")}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    out.innerHTML = `<div class="card"><p class="dim">
+      Link copied. <strong>It contains the whole request</strong>, including the
+      contract address and whoever receives the authority — so treat the link
+      itself as sensitive and do not post it publicly.
+    </p></div>`;
+  } catch {
+    out.innerHTML = `<div class="card"><p class="bad">Clipboard unavailable, so no link was created.</p>
+      <p class="dim">Share the request text itself instead — it is in the box above.</p></div>`;
+  }
+});
+
 // Contract-only check, for when there is an address and no request. Same
 // repertoire as the payload path: what is declared, what is on-chain, do they
 // agree.
@@ -597,6 +627,17 @@ $("sign").addEventListener("click", async () => {
 // ---------------------------------------------------------------------------
 // Boot
 // ---------------------------------------------------------------------------
+// A fresh load clears any leftover fragment. The payload does NOT travel in the
+// URL: an earlier design put the whole request in the fragment so a second page
+// could read it, which meant a payload containing your address and an unlimited
+// spender sat in the address bar, in browser history, and in anything the link
+// was pasted into. The Test -> Check handoff is in memory now, so the URL never
+// needs it. Clearing on load also removes any fragment left over from that
+// earlier version sitting in someone's history.
+if (location.hash && !["#learn", "#test"].includes(location.hash)) {
+  history.replaceState(null, "", location.pathname + location.search);
+}
+
 const initialView = (location.hash || "").replace(/^#/, "");
 if (["learn", "test"].includes(initialView)) showView(initialView);
 
