@@ -37,16 +37,23 @@
   </section>
 
   <section class="settings" aria-label="RPC settings">
-    <label for="rpc-url">RPC endpoint</label>
-    <div class="row">
-      <input id="rpc-url" type="text" spellcheck="false"
-             placeholder="leave blank to try public endpoints" />
-      <button id="rpc-apply" type="button" class="secondary">Apply</button>
-    </div>
-    <p class="hint" id="rpc-status">
-      A browser can only call endpoints that allow it (CORS). If the defaults are
-      blocked, paste your own — a local node, Alchemy, Infura.
-    </p>
+    <details class="expected">
+      <summary>Advanced: RPC endpoint (only if the defaults are blocked)</summary>
+      <p class="hint">
+        You probably do not need this. ClearSign tries public endpoints that work
+        from a browser. Change it only if the status below says they are
+        blocked — for example to point at a chain those defaults do not serve.
+      </p>
+      <div class="row">
+        <input id="rpc-url" type="text" spellcheck="false"
+               placeholder="https://… (an endpoint, not a payload)" />
+        <button id="rpc-apply" type="button" class="secondary">Apply</button>
+      </div>
+      <p class="hint" id="rpc-status">
+        A browser can only call endpoints that allow it (CORS). If the defaults
+        are blocked, paste your own — a local node, Alchemy, Infura.
+      </p>
+    </details>
   </section>
 
   <nav class="tabs" role="tablist">

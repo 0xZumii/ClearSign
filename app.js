@@ -301,12 +301,30 @@ function failed(out, error) {
   out.innerHTML = `<div class="card"><p class="bad">${escapeHtml(error.message ?? error)}</p></div>`;
 }
 
+/** True when the RPC field holds something that is not an endpoint. */
+function rpcUrlLooksWrong() {
+  const raw = $("rpc-url").value.trim();
+  return raw !== "" && !/^https?:\/\/\S+$/i.test(raw);
+}
+
 // ---------------------------------------------------------------------------
 // wiring
 // ---------------------------------------------------------------------------
 $("rpc-apply").addEventListener("click", async () => {
-  const url = $("rpc-url").value.trim();
-  rpc = new Rpc(url || null);
+  const raw = $("rpc-url").value.trim();
+  const status = $("rpc-status");
+
+  // This field sits at the top of the page, so it is the first thing someone
+  // pastes into -- and a pasted signing payload is not an endpoint. Catching
+  // that here beats letting it become a URL and failing with a 405 whose error
+  // message quotes the entire payload back at the user.
+  if (raw && !/^https?:\/\/\S+$/i.test(raw)) {
+    status.textContent =
+      "That does not look like an endpoint. An RPC URL starts with https:// — a signing payload goes in the Signed payload tab instead.";
+    status.className = "hint bad";
+    return;
+  }
+  rpc = new Rpc(raw || null);
   await showRpcStatus();
 });
 
@@ -358,8 +376,9 @@ $("inspect").addEventListener("click", async () => {
 $("check-payload").addEventListener("click", async () => {
   const out = $("payload-out");
   let payload;
+  const rawBox = $("payload").value;
   try {
-    payload = JSON.parse($("payload").value);
+    payload = JSON.parse(rawBox);
   } catch (error) {
     failed(out, new Error(`That is not valid JSON: ${error.message}`));
     return;
@@ -368,7 +387,29 @@ $("check-payload").addEventListener("click", async () => {
   if (!payload.types && Array.isArray(payload.params)) {
     payload = payload.params.find((p) => p && typeof p === "object" && p.types) ?? payload;
   }
+
+  // Re-render the box from what is actually being checked. A normalised display
+  // costs nothing and removes a real hazard: if the box shows one payload while
+  // a different one was parsed, the user reads a result for something they did
+  // not paste.
+  $("payload").value = JSON.stringify(payload, null, 2);
+
   const signature = $("signature").value.trim() || null;
+
+  // Guard the whole check on a usable endpoint. If the RPC field holds something
+  // that is not a URL, every read below fails and the failures quote that value
+  // back -- which is how a pasted payload ends up in five error messages at once.
+  if (rpcUrlLooksWrong()) {
+    failed(
+      out,
+      new Error(
+        "The RPC endpoint field does not contain a URL, so nothing can be read from a chain. " +
+          "Clear it, or put an https:// endpoint there. A signing payload belongs in this box, not that one."
+      )
+    );
+    return;
+  }
+
   busy(out, "computing the digest…");
   try {
     const result = await inspectPayload(rpc, payload, {

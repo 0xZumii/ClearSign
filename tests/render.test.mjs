@@ -459,6 +459,48 @@ test("a matching chain is stated positively", async () => {
   assert.doesNotMatch(text, /WRONG CHAIN/);
 });
 
+test("a non-URL in the RPC field stops the check instead of poisoning every read", async () => {
+  // The user pasted a signing payload into the RPC box. Every subsequent read
+  // failed and each failure quoted that whole payload back, which made five
+  // unrelated errors look like one payload problem.
+  els["rpc-url"].value = '{"types":{"EIP712Domain":[]}}';
+  els["payload-out"].innerHTML = "";
+  els["payload"].value = JSON.stringify(DRAIN_PAYLOAD);
+  els["check-payload"].click();
+  await new Promise((r) => setTimeout(r, 0));
+  const text = els["payload-out"].innerText;
+  assert.match(text, /does not contain a URL/i);
+  // It must not have attempted the check at all.
+  assert.doesNotMatch(text, /UNLIMITED/);
+  els["rpc-url"].value = "";
+});
+
+test("an absent signature is silent, a malformed one is notable not high", async () => {
+  const absent = await renderPayload(DRAIN_PAYLOAD, {});
+  assert.doesNotMatch(absent, /could not be recovered/i);
+
+  els["payload"].value = JSON.stringify(DRAIN_PAYLOAD);
+  els["signature"].value = "0xnothex";
+  els["check-payload"].click();
+  await new Promise((r) => setTimeout(r, 0));
+  const malformed = els["payload-out"].innerText;
+  assert.match(malformed, /not a 65-byte hex value/i);
+  assert.doesNotMatch(malformed, /Signature could not be recovered/i);
+  els["signature"].value = "";
+});
+
+test("the payload box re-renders to what was actually checked", async () => {
+  // Hidden hazard: if the box displays one payload while a different one was
+  // parsed, the user reads a result for something they did not paste.
+  const wrapped = { params: ["0xabc", DRAIN_PAYLOAD] };
+  els["payload"].value = JSON.stringify(wrapped);
+  els["check-payload"].click();
+  await new Promise((r) => setTimeout(r, 0));
+  const shown = JSON.parse(els["payload"].value);
+  assert.equal(shown.primaryType, "Permit", "box should show the object that was checked");
+  assert.equal(shown.params, undefined);
+});
+
 test("a wrong name renders as incompatible, loudly", async () => {
   const text = await renderContract({
     address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
