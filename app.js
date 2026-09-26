@@ -579,6 +579,15 @@ function loadExample(key) {
 $("sample-drain").addEventListener("click", () => loadExample("drain"));
 $("sample-safe").addEventListener("click", () => loadExample("safe"));
 
+/**
+ * Loading an example jumps to Check, which leaves the browser Back button as the
+ * only way out. This puts Learn back in reach without a history dance.
+ */
+$("sample-reset").addEventListener("click", () => {
+  showView("learn");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
 // ---------------------------------------------------------------------------
 // Test view
 // ---------------------------------------------------------------------------

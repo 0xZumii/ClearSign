@@ -115,57 +115,53 @@ No request handy? Use the Learn tab to see real examples.'></textarea>
   <div id="view-learn" class="view">
     <section class="intro">
       <p>
-        What the tool checks, what a signature can do to you, and what the output
-        means. Every example below can be loaded straight into the checker.
+        ClearSign tells you three things about a signature request. That is the
+        whole idea — everything else on this page is optional detail.
       </p>
     </section>
 
     <section class="learn-item">
-      <h2>Try a real example</h2>
-      <p class="dim">
-        The fastest way to understand the output is to look at one. Load either
-        of these and press Check.
-      </p>
-      <div class="row">
-        <button type="button" id="sample-drain">Load a drain-shaped permit</button>
-        <button type="button" class="secondary" id="sample-safe">Load an ordinary message</button>
-      </div>
-      <p class="hint">
-        The first is an unlimited, never-expiring permission. It is the shape of
-        the most common wallet drain. Loading it does not sign anything.
-      </p>
-    </section>
-
-    <section class="learn-item">
-      <h2>The three things this checks</h2>
-      <dl>
-        <dt>Will the contract accept your signature?</dt>
+      <h2>The three answers</h2>
+      <dl class="answers">
+        <dt>Will the contract accept it?</dt>
         <dd>
-          A wallet and a contract must agree on a domain string before signing.
-          If a contract's copy has a typo, every signature it receives is
-          invalid — forever, and silently. Nothing reverts. The wallet shows a
-          normal prompt and the transaction simply fails.
+          If a contract's version of the signing string has a typo, every
+          signature it receives is silently invalid. Nothing reverts — the
+          transaction just fails, forever.
         </dd>
 
-        <dt>What does the signature authorise?</dt>
+        <dt>What does it authorise?</dt>
         <dd>
-          A signature is not a payment. It is a standing permission. An
-          <em>unlimited</em> allowance lets the recipient move your entire
-          balance, not just what you meant to spend.
+          A signature is not a payment, it is a permission. <em>Unlimited</em>
+          means the whole balance, not what you meant to spend.
         </dd>
 
         <dt>Can it be used against you later?</dt>
         <dd>
-          This is the one people miss. A permit does not have to be used
-          immediately. If the permission has not been submitted yet, whoever
-          holds it can use it whenever they like — and a <code>deadline</code> of
-          the maximum number means <em>never expires</em>.
+          A permission does not have to be used immediately. If it has not been
+          submitted yet, whoever holds it can use it whenever they like — and it
+          may never expire.
         </dd>
       </dl>
-      <p class="dim" style="margin-top:0.9rem">
-        So "how long is this open for?" has three answers, and ClearSign says
-        which one applies:
+    </section>
+
+    <section class="learn-item">
+      <h2>See it for yourself</h2>
+      <p class="dim">
+        The fastest way to understand the output is to look at one. Loading does
+        not sign anything.
       </p>
+      <div class="row">
+        <button type="button" id="sample-drain">Load a drain-shaped permit</button>
+        <button type="button" class="secondary" id="sample-safe">Load an ordinary message</button>
+        <button type="button" class="secondary" id="sample-reset">Back to Learn</button>
+      </div>
+    </section>
+
+    <p class="dim more-label">Want the detail?</p>
+
+    <details class="more">
+      <summary>How long is a permission open for?</summary>
       <table class="learn-table">
         <thead><tr><th>The deadline says</th><th>Which means</th></tr></thead>
         <tbody>
@@ -175,20 +171,19 @@ No request handy? Use the Learn tab to see real examples.'></textarea>
         </tbody>
       </table>
       <p class="hint">
-        Separately, ClearSign reads the allowance <em>right now</em>. That shows
-        what is already open, which is not the same as what this signature would
-        open — a permission granted last year is live whether or not you still
-        have the signature.
+        ClearSign also reads the allowance <em>right now</em>. That is what is
+        already open, which is not the same as what this signature would open — a
+        permission granted last year is live whether or not you still have the
+        signature. Revoking it is what closes it.
       </p>
-    </section>
+    </details>
 
-    <section class="learn-item">
-      <h2>What your wallet already tells you</h2>
+    <details class="more">
+      <summary>What your wallet already tells you</summary>
       <p class="dim">
-        Modern wallets have improved. A prompt may already say "Spending cap:
-        Unlimited" and name the spender. Where that happens, ClearSign is not
-        repeating it — it adds the parts a wallet cannot know without asking the
-        chain:
+        A modern wallet may already say "Spending cap: Unlimited" and name the
+        spender. ClearSign is not repeating that — it adds what a wallet cannot
+        know without asking the chain:
       </p>
       <table class="learn-table">
         <thead><tr><th>ClearSign adds</th><th>Why the wallet can't</th></tr></thead>
@@ -199,68 +194,67 @@ No request handy? Use the Learn tab to see real examples.'></textarea>
           <tr><td>The spender's history</td><td>Needs to read code size and transaction count</td></tr>
         </tbody>
       </table>
-    </section>
+    </details>
 
-    <section class="learn-item">
-      <h2>Habits that matter more than any single check</h2>
+    <details class="more">
+      <summary>Where does the contract address come from?</summary>
       <p class="dim">
-        ClearSign helps with one moment: the second before you sign. Everything
-        below is what protects you the rest of the time. These matter more,
-        because they hold even when a check is fooled.
+        You do not have to go looking for it. When a site asks you to sign, the
+        request it sends your wallet contains <code>verifyingContract</code> —
+        the contract's address — and that is what the wallet displays. Copying
+        the request copies the address with it.
+      </p>
+    </details>
+
+    <details class="more">
+      <summary>Habits that matter more than any single check</summary>
+      <p class="dim">
+        ClearSign helps with one moment: the second before you sign. These
+        protect you the rest of the time, and they hold even when a check is
+        fooled.
       </p>
       <dl>
         <dt>Keep a burner for anything new</dt>
         <dd>
           A wallet holding nothing you would miss. Sign every first interaction
-          — new site, new mint, new contract — with the burner, then move what
-          survived. Most drains only take what the signing wallet holds.
+          with it, then move what survived. Most drains only take what the
+          signing wallet holds.
         </dd>
 
         <dt>Revoke regularly, not just after a scare</dt>
         <dd>
-          An unlimited allowance is a standing permission. It keeps working
-          whether or not you remember granting it. Revoking costs gas and takes
-          a minute; a forgotten allowance can cost the balance. This is the
-          habit ClearSign's "never expires" finding most directly argues for.
+          A permission keeps working whether or not you remember granting it.
+          Revoking costs gas and a minute; a forgotten allowance can cost the
+          balance.
         </dd>
 
         <dt>One wallet per job</dt>
         <dd>
-          A wallet you only use for long-term holding should never sign anything
-          at all. If it never connects to a site, nothing can ask it for a
-          permission. The strongest hygiene is a key that stays offline.
+          A wallet you only use for holding should never sign anything. If it
+          never connects to a site, nothing can ask it for a permission.
         </dd>
 
         <dt>Read the prompt, not the vibe</dt>
         <dd>
-          A clean-looking site behind a well-known brand tells you nothing — the
-          front end can be cloned wholesale. What the wallet actually asks for is
-          the only thing that cannot be faked.
+          A clean-looking site behind a known brand tells you nothing — the front
+          end can be cloned. What the wallet actually asks for cannot be faked.
         </dd>
 
         <dt>Be suspicious of a chain prompt</dt>
         <dd>
-          "This site wants to add a network" or "switch network" is a common step
-          in switching you onto a chain where the attacker's contract lives.
-          ClearSign never asks you to add a chain, and neither should anything
-          you did not explicitly go looking for.
-        </dd>
-
-        <dt>Small balances, separate keys</dt>
-        <dd>
-          Assume any wallet that signs will eventually be drained. Decide in
-          advance how much that costs you, and keep it small. This is the same
-          idea as a burner, applied permanently rather than per-interaction.
+          "This site wants to add a network" is a common step in moving you onto
+          a chain where the attacker's contract lives. ClearSign never asks you
+          to add a chain.
         </dd>
       </dl>
       <p class="hint">
         None of this is a substitute for the check, and the check is no
-        substitute for this. Both exist because the other one fails sometimes.
+        substitute for this.
       </p>
-    </section>
+    </details>
 
-    <section class="learn-item">
-      <h2>What this cannot tell you</h2>
+    <details class="more">
+      <summary>What this cannot tell you</summary>
       <ul class="dim">
         <li>
           <strong>It is not a safety score.</strong> A malicious contract can ask
@@ -278,17 +272,7 @@ No request handy? Use the Learn tab to see real examples.'></textarea>
           see enough to judge, it says so rather than implying the result is fine.
         </li>
       </ul>
-    </section>
-
-    <section class="learn-item">
-      <h2>Where the contract address comes from</h2>
-      <p class="dim">
-        You do not have to go looking for it. When a site asks you to sign, the
-        request it sends your wallet contains <code>verifyingContract</code> —
-        the contract's address — and that is what your wallet displays in its
-        prompt. Copying the request copies the address with it.
-      </p>
-    </section>
+    </details>
   </div>
 
   <!-- ===================== TEST ===================== -->

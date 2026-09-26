@@ -126,6 +126,30 @@ test("the picker explains why an owned wallet may be absent", () => {
   assert.match(appJs, /switch it to an EVM network/i);
 });
 
+test("the Learn tab leads with three answers, not a wall", () => {
+  // The concern: length turns off the people who need it most. Three short
+  // answers first; depth is available but collapsed.
+  assert.match(index, /The three answers/i);
+  assert.match(index, /Will the contract accept it\?/i);
+  assert.match(index, /What does it authorise\?/i);
+  assert.match(index, /Can it be used against you later\?/i);
+});
+
+test("depth is available but collapsed by default", () => {
+  const learn = index.slice(index.indexOf('id="view-learn"'), index.indexOf('id="view-test"'));
+  const more = (learn.match(/<details class="more">/g) ?? []).length;
+  assert.ok(more >= 4, `expected several collapsed sections, found ${more}`);
+  // None of them may start open, or the wall is back.
+  assert.doesNotMatch(learn, /<details class="more" open>/);
+});
+
+test("loading an example offers a way back without the tab", () => {
+  // The report: the only route back was hitting Learn again.
+  assert.match(index, /id="sample-reset"/);
+  assert.match(appJs, /\$\("sample-reset"\)\.addEventListener/);
+  assert.match(appJs, /showView\("learn"\)/);
+});
+
 test("the Learn tab covers hygiene beyond any single signature", () => {
   // The user asked for this: the habits that protect you when a check is fooled.
   assert.match(index, /Habits that matter more than any single check/i);
@@ -137,7 +161,7 @@ test("the Learn tab covers hygiene beyond any single signature", () => {
 });
 
 test("the Learn tab answers how long a permission stays open", () => {
-  assert.match(index, /how long is this open for/i);
+  assert.match(index, /How long is a permission open for\?/i);
   assert.match(index, /Never expires/i);
   assert.match(index, /Already expired/i);
   assert.match(index, /allowance <em>right now<\/em>/i);

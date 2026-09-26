@@ -53,7 +53,7 @@ const ids = [
   "payload-out", "rpc-url", "rpc-apply", "rpc-status", "share-payload",
   "address", "exp-name", "exp-version", "inspect", "contract-out",
   // learn view
-  "sample-drain", "sample-safe",
+  "sample-drain", "sample-safe", "sample-reset",
   // test view
   "wallet-status", "connect", "wallet-picker", "test-payload",
   "sign", "copy-payload", "send-to-check", "test-out",

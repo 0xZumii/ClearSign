@@ -135,6 +135,52 @@ button.secondary { background: #1b2230; color: var(--text); font-weight: 600; }
 .learn-item dd { margin: 0.25rem 0 0; color: var(--text-dim); font-size: 0.92rem; line-height: 1.6; }
 .learn-item ul { margin: 0; padding-left: 1.1rem; font-size: 0.92rem; line-height: 1.6; }
 .learn-item li { margin-bottom: 0.5rem; }
+
+/* The three answers get breathing room and a rule down the left, so the page's
+   actual content is scannable rather than a wall of paragraphs. */
+.answers { border-left: 2px solid var(--border); padding-left: 1rem; }
+.answers dt { margin-top: 0; margin-bottom: 0.15rem; }
+.answers dd { margin-bottom: 1rem; }
+.answers dd:last-child { margin-bottom: 0; }
+
+.more-label {
+  margin: 2rem 0 0.5rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
+/* Reference material: available, not in the way. Each is one line until asked. */
+.more {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  margin-bottom: 0.5rem;
+}
+.more > summary {
+  cursor: pointer;
+  padding: 0.7rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  list-style: none;
+}
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+.more[open] > summary::before { content: "–"; }
+.more[open] > summary { border-bottom: 1px solid var(--border); }
+.more > *:not(summary) { margin-inline: 0.9rem; }
+.more > *:not(summary):last-child { margin-bottom: 0.9rem; }
+.more > table { margin-top: 0.7rem; width: calc(100% - 1.8rem); }
+.more dl { margin-top: 0.8rem; }
+.more dd { margin-bottom: 0.8rem; }
+
 .learn-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
 .learn-table th {
   text-align: left;
