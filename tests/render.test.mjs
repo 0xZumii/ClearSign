@@ -32,14 +32,24 @@ class FakeEl {
   click() { for (const fn of this._listeners.click ?? []) fn(); }
   set innerHTML(v) { this._html = String(v); }
   get innerHTML() { return this._html; }
-  get innerText() { return this._html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(); }
+  get innerText() {
+    return this._html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&#39;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
   setAttribute() {}
 }
 
 const ids = [
   "rpc-url", "rpc-apply", "rpc-status", "address", "inspect",
   "exp-name", "exp-version", "contract-out", "payload", "signature",
-  "check-payload", "check-onchain", "check-spenders", "payload-out",
+  "check-payload", "check-onchain", "check-spenders", "check-liveness", "payload-out",
 ];
 
 function makeDom() {
@@ -66,6 +76,9 @@ function makeDom() {
 }
 
 const { Rpc } = await import("../lib/rpc.js");
+const { selector } = await import("../lib/keccak.js");
+const ALLOWANCE_SELECTOR = selector("allowance(address,address)");
+const NONCES_SELECTOR = selector("nonces(address)");
 
 // Import app.js once, against one DOM. app.js binds its handlers to the elements
 // that exist at import time, so every test must drive those same objects rather
@@ -174,7 +187,16 @@ async function renderPayload(payload, options = {}) {
     getBalance: Rpc.prototype.getBalance,
   };
   Rpc.prototype.chainId = async () => 1;
-  Rpc.prototype.callContract = async () => options.separator ?? "0x";
+  Rpc.prototype.callContract = async (_to, data) => {
+    // Permit-liveness reads, matched by their derived selectors.
+    const sel = String(data).slice(0, 10);
+    if (sel === ALLOWANCE_SELECTOR) return options.liveness?.allowanceReturns ?? "0x";
+    if (sel === NONCES_SELECTOR) {
+      const n = options.liveness?.nonceReturns;
+      return n === undefined ? "0x" : "0x" + BigInt(n).toString(16).padStart(64, "0");
+    }
+    return options.separator ?? "0x";
+  };
   Rpc.prototype.getCode = async () =>
     options.noCode === false ? "0x" + "60".repeat(options.codeSize ?? 100) : "0x";
   Rpc.prototype.getTransactionCount = async () => options.txCount ?? 0;
@@ -185,6 +207,7 @@ async function renderPayload(payload, options = {}) {
     els["signature"].value = "";
     els["check-onchain"].checked = Boolean(options.checkOnchain);
     els["check-spenders"].checked = Boolean(options.inspectSpenders);
+    els["check-liveness"].checked = Boolean(options.checkLiveness);
     els["check-payload"].click();
     await new Promise((r) => setTimeout(r, 0));
     return els["payload-out"].innerText;
@@ -318,6 +341,96 @@ test("a tiny forwarder spender is called out as small, not as malicious", async 
   });
   assert.match(text, /small enough to be a forwarder/i);
   assert.doesNotMatch(text, /\bis a drainer\b/i);
+});
+
+test("an unspent, never-expiring permit is called out as a standing permission", async () => {
+  // The scenario the whole check exists for: not a drain happening now, but a
+  // signature the attacker can hold and submit whenever they like. deadline is
+  // uint256 max -- EIP-2612's documented way to make a permit that never expires.
+  const payload = JSON.parse(JSON.stringify(DRAIN_PAYLOAD));
+  payload.message.deadline = (2n ** 256n - 1n).toString();
+  const text = await renderPayload(payload, {
+    checkLiveness: true,
+    liveness: { nonceReturns: "0", allowanceReturns: "0" },
+  });
+  assert.match(text, /can this be used against you later/i);
+  assert.match(text, /NOT yet used — still executable/i);
+  assert.match(text, /never \(deadline = uint256 max\)/i);
+  assert.match(text, /has NOT been submitted yet/i);
+  assert.match(text, /it never expires/i);
+});
+
+test("an already-expired permit does not claim it can still be used", async () => {
+  const payload = JSON.parse(JSON.stringify(DRAIN_PAYLOAD));
+  payload.message.deadline = "1"; // 1970; long past
+  const text = await renderPayload(payload, {
+    checkLiveness: true,
+    liveness: { nonceReturns: "0", allowanceReturns: "0" },
+  });
+  assert.match(text, /deadline has passed/i);
+  assert.doesNotMatch(text, /at any time/i);
+});
+
+test("an already-spent permit is reported as no longer executable", async () => {
+  const text = await renderPayload(DRAIN_PAYLOAD, {
+    checkLiveness: true,
+    liveness: { nonceReturns: "7", allowanceReturns: "0" },
+  });
+  assert.match(text, /already used/i);
+  assert.match(text, /no longer executable/i);
+  assert.doesNotMatch(text, /still executable/i);
+});
+
+test("a live unlimited allowance is flagged independently of the signature", async () => {
+  const text = await renderPayload(DRAIN_PAYLOAD, {
+    checkLiveness: true,
+    liveness: { nonceReturns: "7", allowanceReturns: (2n ** 256n - 1n).toString() },
+  });
+  assert.match(text, /UNLIMITED allowance/i);
+  assert.match(text, /does not need the signature/i);
+});
+
+test("a finite future deadline is dated, not treated as unlimited", async () => {
+  const soon = String(Math.floor(Date.now() / 1000) + 86400 * 3);
+  const payload = JSON.parse(JSON.stringify(DRAIN_PAYLOAD));
+  payload.message.deadline = soon;
+  const text = await renderPayload(payload, {
+    checkLiveness: true,
+    liveness: { nonceReturns: "0", allowanceReturns: "0" },
+  });
+  assert.match(text, /in the future/i);
+  assert.doesNotMatch(text, /never \(deadline/i);
+});
+
+test("liveness is skipped when the payload is not an authorisation type", async () => {
+  const benign = {
+    types: { EIP712Domain: [{ name: "name", type: "string" }], Mail: [{ name: "contents", type: "string" }] },
+    primaryType: "Mail",
+    domain: { name: "App" },
+    message: { contents: "hello" },
+  };
+  const text = await renderPayload(benign, { checkLiveness: true });
+  assert.doesNotMatch(text, /can this be used against you later/i);
+});
+
+test("a never-expiring deadline is not misread as an unlimited spend", async () => {
+  // Regression: deadline = uint256 max means "never expires", not "whole
+  // balance". Reading a timestamp as a money amount is a false alarm on the
+  // most alarming possible line.
+  const payload = JSON.parse(JSON.stringify(DRAIN_PAYLOAD));
+  payload.message.deadline = (2n ** 256n - 1n).toString();
+  const text = await renderPayload(payload, { checkLiveness: true, liveness: { nonceReturns: "0" } });
+  assert.doesNotMatch(text, /UNLIMITED at 'deadline'/i);
+  // The value field still is a spend limit, so it must still be flagged.
+  assert.match(text, /UNLIMITED at 'value'/i);
+});
+
+test("an unlimited field is recognised by name, not by magnitude alone", async () => {
+  const payload = JSON.parse(JSON.stringify(DRAIN_PAYLOAD));
+  payload.types.Permit.push({ name: "expiry", type: "uint256" });
+  payload.message.expiry = (2n ** 256n - 1n).toString();
+  const text = await renderPayload(payload, {});
+  assert.doesNotMatch(text, /UNLIMITED at 'expiry'/i);
 });
 
 test("a wrong name renders as incompatible, loudly", async () => {

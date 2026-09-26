@@ -198,6 +198,24 @@ function renderPayload(result) {
     }
   }
 
+  // Persistence. This is the "can they come back later" answer, so it renders
+  // with its own heading rather than being folded into the findings list.
+  if (result.liveness) {
+    const L = result.liveness;
+    parts.push(`<h3 class="subhead">can this be used against you later?</h3>`);
+    parts.push(
+      `<div class="fields">` +
+        rowsHtml([
+          ["signature spent", L.signatureUnspent === null ? "unknown" : L.signatureUnspent ? "NOT yet used — still executable" : "already used"],
+          ["on-chain nonce", L.onchainNonce === null ? "unknown" : String(L.onchainNonce)],
+          ["expires", L.neverExpires === null ? "unknown" : L.neverExpires ? "never (deadline = uint256 max)" : L.expired ? "already expired" : "in the future"],
+          ["allowance now", L.allowance === null ? "unknown" : L.allowanceUnlimited ? "UNLIMITED" : L.allowance],
+        ]) +
+        `</div>`
+    );
+    parts.push(`<ul class="findings">${L.findings.map(findingHtml).join("")}</ul>`);
+  }
+
   parts.push(`<ul class="findings">${result.findings.map(findingHtml).join("")}</ul></div>`);
   return parts.join("");
 }
@@ -283,6 +301,7 @@ $("check-payload").addEventListener("click", async () => {
       signature,
       checkOnchain: $("check-onchain").checked,
       inspectSpenders: $("check-spenders").checked,
+      checkLiveness: $("check-liveness").checked,
     });
     out.innerHTML = renderPayload(result);
   } catch (error) {
