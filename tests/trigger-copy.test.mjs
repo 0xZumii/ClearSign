@@ -60,7 +60,25 @@ test("Robinhood Chain is still documented as a recognised chain", () => {
   assert.match(appJs, /4663/);
 });
 
-test("the chain-mismatch explanation is present where a user will look", () => {
-  assert.match(index, /matches the[\s\S]*?chainId[\s\S]*?payload/i);
-  assert.match(sign, /chainId[\s\S]*?not the chain your wallet is on/i);
+test("the trigger hands the payload over instead of leaving a dead end", () => {
+  // The user signed a prompt and had nothing to copy, because a wallet shows a
+  // rendered summary and never the JSON. A bare link would arrive at an empty
+  // box, so the payload must travel with it.
+  assert.match(signJs, /function syncHandoff/);
+  assert.match(signJs, /params\.set\("payload"/);
+  assert.match(sign, /Copy this payload/i);
+  assert.match(sign, /will <strong>not<\/strong> show you the JSON/i);
+});
+
+test("ClearSign reads the handoff on load", () => {
+  assert.match(appJs, /function loadFromUrl/);
+  assert.match(appJs, /hash\.get\("payload"\)/);
+  assert.match(appJs, /hash\.get\("signature"\)/);
+});
+
+test("the handoff keeps the payload out of the URL query string", () => {
+  // A fragment is not sent to the server; a query string is. For something a
+  // user may have pasted from a live signing prompt, that difference matters.
+  assert.match(signJs, /index\.html#\$\{params\.toString\(\)\}/);
+  assert.doesNotMatch(signJs, /index\.html\?\$\{params/);
 });

@@ -128,6 +128,44 @@ for (const btn of document.querySelectorAll("[data-sample]")) {
   });
 }
 
+// Carry the payload over to ClearSign. A link alone would be useless -- the user
+// would arrive at an empty box, which is exactly the dead end they hit. The
+// payload travels in the URL fragment (never sent to a server), and ClearSign
+// reads it on load. The signature travels too when there is one, so the signer
+// can be recovered.
+function syncHandoff(signature = null) {
+  const raw = $("payload").value;
+  const link = $("send-to-clearsign");
+  try {
+    JSON.parse(raw); // only pass along something valid
+    const params = new URLSearchParams();
+    params.set("payload", raw);
+    if (signature) params.set("signature", signature);
+    link.href = `./index.html#${params.toString()}`;
+    link.removeAttribute("aria-disabled");
+  } catch {
+    link.href = "./index.html";
+    link.setAttribute("aria-disabled", "true");
+  }
+}
+
+$("copy-payload").addEventListener("click", async () => {
+  const out = $("out");
+  try {
+    await navigator.clipboard.writeText($("payload").value);
+    out.innerHTML = `<div class="card"><p class="dim">Payload copied. Paste it into <a href="./index.html">ClearSign</a>.</p></div>`;
+  } catch {
+    // Clipboard needs a secure context and permission; select it so the user can
+    // copy by hand rather than being told it worked when it did not.
+    const box = $("payload");
+    box.focus();
+    box.select();
+    out.innerHTML = `<div class="card"><p class="dim">Could not reach the clipboard — the payload is selected above, copy it with Ctrl/Cmd+C.</p></div>`;
+  }
+});
+
+$("payload").addEventListener("input", () => syncHandoff());
+
 $("sign").addEventListener("click", async () => {
   const out = $("out");
   if (!window.ethereum) {
@@ -158,8 +196,13 @@ $("sign").addEventListener("click", async () => {
     out.innerHTML = `<div class="card">
       <p><span class="pill ok">signed</span> — nothing was sent on-chain.</p>
       <div class="kv"><span class="k">signature</span><span class="v mono">${escapeHtml(signature)}</span></div>
-      <p class="hint">Paste the JSON above into <a href="./index.html">ClearSign</a> to see what it authorises.</p>
+      <p class="hint">
+        Your wallet showed you a summary, not this JSON. Clear it now:
+        <strong>Check it in ClearSign →</strong> carries the payload (and the
+        signature, so the signer is recovered) over for you.
+      </p>
     </div>`;
+    syncHandoff(signature);
   } catch (error) {
     out.innerHTML = `<div class="card"><p class="bad">Signing failed or was rejected: ${escapeHtml(error.message ?? String(error))}</p></div>`;
   }
@@ -170,6 +213,10 @@ refreshWallet().then(() => {
   if (!$("payload").value) {
     render(unlimitedPermit(currentChainId ?? 1, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"));
   }
+  // The initial payload was set programmatically, which does not fire `input`,
+  // so build the handoff link once here too -- otherwise the button is dead for
+  // anyone who does not touch the textarea.
+  syncHandoff();
 });
 
 if (window.ethereum?.on) {

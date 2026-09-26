@@ -67,7 +67,7 @@ function makeDom() {
     querySelectorAll: (sel) =>
       sel === ".tab" ? tabs : sel === ".panel" ? panels : [],
   };
-  globalThis.location = { search: "" };
+  globalThis.location = { search: "", hash: "" };
   globalThis.URLSearchParams = URLSearchParams;
   globalThis.fetch = async () => {
     throw new TypeError("fetch failed");

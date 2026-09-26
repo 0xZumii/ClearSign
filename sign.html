@@ -66,11 +66,14 @@
     <label>3. Ask your wallet to sign it</label>
     <div class="row">
       <button id="sign" type="button">Sign with wallet</button>
+      <button id="copy-payload" type="button" class="secondary">Copy this payload</button>
+      <a class="btn-like secondary" id="send-to-clearsign" href="./index.html">Check it in ClearSign →</a>
     </div>
     <p class="hint">
-      Your wallet will show its normal prompt. Copy what it shows — or copy the
-      JSON above — into <a href="./index.html">ClearSign</a> to see what the
-      signature actually authorises.
+      Your wallet will show its own summary — "Spending cap: Unlimited", the
+      spender, the network. It will <strong>not</strong> show you the JSON that
+      ClearSign reads. Use <em>Copy this payload</em> above, or the
+      <em>Check it</em> button, which carries it over for you.
     </p>
 
     <output id="out" class="out" aria-live="polite"></output>

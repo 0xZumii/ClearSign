@@ -420,11 +420,32 @@ for (const tab of document.querySelectorAll(".tab")) {
 // than sitting on its initial hint while everything already works.
 showRpcStatus();
 
-// Deep-link support: ?address=0x… pre-fills and runs, so a report can be shared.
-const params = new URLSearchParams(location.search);
-if (params.get("address")) {
-  $("address").value = params.get("address");
-  if (params.get("name")) $("exp-name").value = params.get("name");
-  if (params.get("version")) $("exp-version").value = params.get("version");
-  $("inspect").click();
+// Deep-link support. Two shapes are accepted:
+//   ?address=0x…&name=…&version=…   from a shared link
+//   #payload=<json>&signature=0x…   from the test trigger's handoff
+// The payload travels in the fragment, so it is never sent to any server.
+function loadFromUrl() {
+  const params = new URLSearchParams(location.search);
+  if (params.get("address")) {
+    $("address").value = params.get("address");
+    if (params.get("name")) $("exp-name").value = params.get("name");
+    if (params.get("version")) $("exp-version").value = params.get("version");
+    $("inspect").click();
+    return;
+  }
+
+  const hash = new URLSearchParams((location.hash ?? "").replace(/^#/, ""));
+  const payload = hash.get("payload");
+  if (!payload) return;
+  try {
+    const parsed = JSON.parse(payload);
+    document.querySelector('.tab[data-tab="payload"]').click();
+    $("payload").value = JSON.stringify(parsed, null, 2);
+    if (hash.get("signature")) $("signature").value = hash.get("signature");
+    $("check-payload").click();
+  } catch {
+    /* a malformed handoff is not worth an error banner */
+  }
 }
+
+loadFromUrl();
