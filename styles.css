@@ -40,6 +40,10 @@ code { background: #1b2230; padding: 0.1em 0.35em; border-radius: 4px; word-brea
   margin-bottom: 1.5rem;
 }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.brand { display: flex; gap: 0.75rem; align-items: center; }
+/* The SVG carries its own rounded dark tile, so no border or background here --
+   adding one would double-frame the mark. */
+.brand-mark { width: 2.6rem; height: 2.6rem; flex: none; display: block; }
 .brand-text h1 { margin: 0; font-size: 1.25rem; letter-spacing: -0.01em; }
 .tagline { margin: 0.15rem 0 0; color: var(--text-dim); font-size: 0.9rem; }
 .repo-link { font-size: 0.85rem; color: var(--text-faint); text-decoration: none; }

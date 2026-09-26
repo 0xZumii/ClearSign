@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="ClearSign">
+  <title>ClearSign</title>
+
+  <!--
+    The tile is deliberate. The hexagon and bars are drawn for a dark background,
+    so on a light one (GitHub's light theme, a light browser tab) a transparent
+    mark would wash out. The tile keeps it legible wherever it lands, and on the
+    site's own #0a0d12 it reads as seamless.
+  -->
+  <rect width="128" height="128" rx="28" fill="#0a0d12"/>
+
+  <!--
+    Hexagon, stroked so its weight matches the bars inside it exactly. A hexagon
+    rather than a shield: this tool refuses to say "safe", and a shield implies
+    exactly that. The hexagon says "on-chain" without claiming protection.
+  -->
+  <path
+    d="M64 16 L103 38.5 L103 89.5 L64 112 L25 89.5 L25 38.5 Z"
+    fill="none"
+    stroke="#22d3ee"
+    stroke-width="6"
+    stroke-linejoin="miter"/>
+
+  <!--
+    The mark's whole idea: a signing request being made legible.
+
+    Solid bars are what the tool could read. Dotted lines are what it could not.
+    That is how the output actually behaves, which is why there is no checkmark
+    anywhere in this logo. A tick would say "verified, you are fine", and that is
+    the one claim this tool exists to avoid making.
+
+    Bars of varying length, fading solid to dotted left to right, reading as a
+    payload being transcribed rather than as a chart.
+  -->
+  <g stroke-linecap="butt">
+    <!-- Fully resolved rows. -->
+    <g stroke="#22d3ee" stroke-width="5">
+      <line x1="40" y1="43" x2="66" y2="43"/>
+      <line x1="40" y1="54" x2="88" y2="54"/>
+      <line x1="40" y1="65" x2="74" y2="65"/>
+      <line x1="40" y1="76" x2="84" y2="76"/>
+      <line x1="40" y1="87" x2="58" y2="87"/>
+    </g>
+
+    <!-- Unresolved tails: same rows, lighter, so the eye reads them as the end of
+         each line rather than as noise. -->
+    <g stroke="#22d3ee" stroke-width="3" stroke-dasharray="3 5" opacity="0.75">
+      <line x1="70" y1="43" x2="88" y2="43"/>
+      <line x1="92" y1="54" x2="88" y2="54"/>
+      <line x1="78" y1="65" x2="88" y2="65"/>
+      <line x1="88" y1="76" x2="88" y2="76"/>
+      <line x1="62" y1="87" x2="88" y2="87"/>
+    </g>
+  </g>
+</svg>

@@ -126,6 +126,43 @@ test("the picker explains why an owned wallet may be absent", () => {
   assert.match(appJs, /switch it to an EVM network/i);
 });
 
+test("the mark is wired as both header logo and favicon", async () => {
+  const readFile = (await import("node:fs/promises")).readFile;
+  assert.match(index, /<img class="brand-mark" src="\.\/logo\.svg"/);
+  assert.match(index, /rel="icon"[^>]*href="\.\/favicon\.svg"/);
+
+  // Both assets must exist and be well-formed XML: an SVG is XML, and a single
+  // "--" inside a comment makes it unparseable and renders nothing at all.
+  for (const name of ["logo.svg", "favicon.svg"]) {
+    const svg = await readFile(new URL(`../${name}`, import.meta.url), "utf8");
+    assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+    assert.match(svg, /<\/svg>\s*$/);
+    // Strip comments, then assert none of the survivors contain a double hyphen.
+    const comments = svg.match(/<!--[\s\S]*?-->/g) ?? [];
+    for (const c of comments) {
+      assert.doesNotMatch(c.slice(4, -3), /--/, `${name}: "--" inside an XML comment`);
+    }
+  }
+});
+
+test("there is no checkmark in the mark, and here is why", async () => {
+  const readFile = (await import("node:fs/promises")).readFile;
+  const svg = await readFile(new URL("../logo.svg", import.meta.url), "utf8");
+  // The tool refuses to say "safe"; a tick would claim it at brand level.
+  assert.doesNotMatch(svg, /polyline/i);
+  assert.match(svg, /why there is no checkmark/i);
+});
+
+test("the favicon is a reduced variant, because the detail does not survive", async () => {
+  const readFile = (await import("node:fs/promises")).readFile;
+  const favicon = await readFile(new URL("../favicon.svg", import.meta.url), "utf8");
+  const logo = await readFile(new URL("../logo.svg", import.meta.url), "utf8");
+  // The full mark's dotted tail renders at 0.38 device px at 16px -- a smear.
+  assert.match(favicon, /Reduced mark/);
+  assert.doesNotMatch(favicon, /stroke-dasharray/, "the favicon must not use dashes");
+  assert.match(logo, /stroke-dasharray/, "the full mark keeps them");
+});
+
 test("the Learn tab leads with three answers, not a wall", () => {
   // The concern: length turns off the people who need it most. Three short
   // answers first; depth is available but collapsed.

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="ClearSign">
+  <title>ClearSign</title>
+
+  <!--
+    Reduced mark, for the favicon and any small placement.
+
+    The full logo's dotted "unresolved" lines and its fade do not survive below
+    roughly 42px: measured, the dash pattern renders at 0.38 device pixels at
+    16px, which is a grey smear rather than a texture. So this variant drops the
+    dots and the fade, keeps four solid bars, and thickens every stroke so the
+    shapes stay separate at tab size.
+
+    Same hexagon, same idea, less detail. The intent is preserved because the
+    bars still read as lines of data rather than as a tick or a shield.
+  -->
+  <rect width="128" height="128" rx="28" fill="#0a0d12"/>
+
+  <path
+    d="M64 14 L105 37.75 L105 90.25 L64 114 L23 90.25 L23 37.75 Z"
+    fill="none"
+    stroke="#22d3ee"
+    stroke-width="9"
+    stroke-linejoin="miter"/>
+
+  <g stroke="#22d3ee" stroke-linecap="butt">
+    <g stroke-width="9">
+      <line x1="40" y1="44" x2="74" y2="44"/>
+      <line x1="40" y1="58" x2="90" y2="58"/>
+      <line x1="40" y1="72" x2="66" y2="72"/>
+      <line x1="40" y1="86" x2="82" y2="86"/>
+    </g>
+  </g>
+</svg>
