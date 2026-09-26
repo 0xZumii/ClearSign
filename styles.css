@@ -145,6 +145,30 @@ button.secondary { background: #1b2230; color: var(--text); font-weight: 600; }
 
 .findings { list-style: none; margin: 0.8rem 0 0; padding: 0; }
 .finding { padding: 0.45rem 0; border-top: 1px solid #1c2330; font-size: 0.9rem; }
+
+/* Shown under every consistent result. Styled as a caution, not a footnote,
+   because omitting or de-emphasising it is how the page would imply safety. */
+.caveat {
+  margin: 0.9rem 0 0;
+  padding: 0.6rem 0.8rem;
+  border-left: 3px solid var(--notable);
+  background: #16130a;
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.subhead {
+  margin: 1rem 0 0.4rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+.fields { background: #0d1117; border-radius: 8px; padding: 0.5rem 0.8rem; }
+/* An unlimited allowance is the single most costly thing on the page; it gets
+   colour so it cannot be skimmed past. */
+.unlimited { color: var(--high); font-weight: 700; }
 .level {
   display: inline-block;
   min-width: 4.6rem;

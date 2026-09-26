@@ -93,7 +93,13 @@ test("payload domain is compared against the verifying contract", { skip: !reach
   const result = await inspectPayload(rpc, payload, { checkOnchain: true });
   assert.ok(result.digest?.startsWith("0x"));
   assert.equal(result.onchainMatch, true);
-  assert.ok(!result.findings.some((f) => f.level === "high"));
+  // A Permit is an authorisation, so it is high-risk by TYPE even with a finite
+  // value. The domain is consistent, which is a separate fact. Both are true,
+  // and the tool must say so rather than letting the consistent domain imply
+  // the payload is harmless.
+  assert.ok(result.findings.some((f) => f.level === "high"), "Permit should be flagged");
+  assert.ok(result.drainShaped);
+  assert.ok(!result.findings.some((f) => /UNLIMITED/.test(f.message)), "1000 is not unlimited");
 });
 
 test("a payload with a fabricated domain is flagged against chain", { skip: !reachable }, async () => {
@@ -114,4 +120,42 @@ test("a payload with a fabricated domain is flagged against chain", { skip: !rea
   const result = await inspectPayload(rpc, payload, { checkOnchain: true });
   assert.equal(result.onchainMatch, false);
   assert.ok(result.findings.some((f) => f.level === "high"));
+  assert.ok(
+    result.findings.some((f) => /does not match the verifying contract/.test(f.message)),
+    "the domain mismatch itself should be what is reported"
+  );
+});
+
+test("an unlimited approval is flagged regardless of the domain", { skip: !reachable }, async () => {
+  const payload = {
+    types: {
+      EIP712Domain: [
+        { name: "name", type: "string" },
+        { name: "version", type: "string" },
+        { name: "chainId", type: "uint256" },
+        { name: "verifyingContract", type: "address" },
+      ],
+      Permit: [
+        { name: "owner", type: "address" },
+        { name: "spender", type: "address" },
+        { name: "value", type: "uint256" },
+        { name: "nonce", type: "uint256" },
+        { name: "deadline", type: "uint256" },
+      ],
+    },
+    primaryType: "Permit",
+    domain: { name: "USD Coin", version: "2", chainId: 1, verifyingContract: USDC },
+    message: {
+      owner: "0x2222222222222222222222222222222222222222",
+      spender: "0x1111111111111111111111111111111111111111",
+      value: "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+      nonce: "0",
+      deadline: "0",
+    },
+  };
+  const result = await inspectPayload(rpc, payload, { checkOnchain: true });
+  // The domain is genuinely consistent here; the payload is still a drain.
+  assert.equal(result.onchainMatch, true);
+  assert.ok(result.findings.some((f) => /UNLIMITED/.test(f.message)));
+  assert.ok(result.drainShaped);
 });

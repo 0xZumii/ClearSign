@@ -103,6 +103,34 @@
     <output id="payload-out" class="out" aria-live="polite"></output>
   </section>
 
+  <section class="how">
+    <h2>How to use this before you sign</h2>
+    <ol>
+      <li>
+        A dapp asks your wallet to sign. The request contains a
+        <code>verifyingContract</code> — the contract address — and it is shown
+        in the wallet prompt. Copy the whole request, or the JSON your wallet
+        displays.
+      </li>
+      <li>Paste it into the <strong>Signed payload</strong> tab above.</li>
+      <li>
+        Read <strong>what this signature authorises</strong>. That is the part
+        that can cost you money: an unlimited allowance hands over the whole
+        balance.
+      </li>
+      <li>
+        The domain check tells you whether the contract will <em>accept</em> the
+        signature. It does not tell you the contract is honest.
+      </li>
+    </ol>
+    <p class="caveat">
+      A pass here is not a green light. A malicious contract can ask for an
+      unlimited approval with a perfectly valid, on-chain-consistent domain —
+      the signature verifies, and you are drained. The domain check catches
+      broken contracts; only reading the fields catches hostile ones.
+    </p>
+  </section>
+
   <section class="limits">
     <h2>What this cannot tell you</h2>
     <ul>

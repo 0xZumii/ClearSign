@@ -17,19 +17,35 @@ function escapeHtml(text) {
 }
 
 /**
- * Status labels are deliberately non-binary. `unverified` and `no_domain` must
- * never render as a green tick, because that is how a tool like this loses its
- * credibility — the whole finding is that not-knowing is a real answer.
+ * Status labels are deliberately non-binary, and `compatible` is deliberately
+ * NOT called "safe" or even "ok".
+ *
+ * A domain that hashes correctly proves ONE thing: the contract and the wallet
+ * agree on the string they hash. It does not mean the contract is legitimate. A
+ * Permit drainer will pass this check, and that is the outcome the attacker
+ * wants, so presenting it as a green tick would be a lie by layout. The loud
+ * result (MISMATCH) is a compatibility bug; the reassuring result is the one
+ * that can be misleading. Both are stated as what they are.
  */
 const STATUS_LABELS = {
-  ok: { text: "domain matches", cls: "ok" },
-  mismatch: { text: "MISMATCH", cls: "high" },
+  ok: { text: "domain is consistent", cls: "ok" },
+  mismatch: { text: "INCOMPATIBLE", cls: "high" },
   unverified: { text: "cannot verify", cls: "notable" },
   no_domain: { text: "no EIP-712 domain found", cls: "info" },
   no_contract: { text: "no contract here", cls: "notable" },
   delegated: { text: "EIP-7702 delegated", cls: "notable" },
   error: { text: "error", cls: "high" },
 };
+
+/**
+ * What a consistent domain does and does not tell you. Rendered under every
+ * positive result, because omitting it is how the page would imply safety.
+ */
+const CONSISTENCY_CAVEAT =
+  "This means the contract and a wallet agree on the domain they hash. " +
+  "It does NOT mean the contract is trustworthy. A malicious contract that " +
+  "asks for an unlimited approval will pass this check — the signature is " +
+  "still valid, and it is still a drain. Read the message fields, not the colour.";
 
 function findingHtml(f) {
   return `<li class="finding"><span class="level ${f.level}">${f.level}</span>${escapeHtml(f.message)}</li>`;
@@ -104,7 +120,14 @@ function renderContract(result) {
     </div>`);
   }
 
-  parts.push(`<ul class="findings">${result.findings.map(findingHtml).join("")}</ul></div>`);
+  parts.push(`<ul class="findings">${result.findings.map(findingHtml).join("")}</ul>`);
+
+  // A consistent domain must carry its caveat inline, every time. Omitting it
+  // is what would turn this page into a false assurance.
+  if (result.status === "ok") {
+    parts.push(`<p class="caveat">${escapeHtml(CONSISTENCY_CAVEAT)}</p>`);
+  }
+  parts.push(`</div>`);
   return parts.join("");
 }
 
@@ -130,10 +153,29 @@ function renderPayload(result) {
     ])
   );
 
+  // The message fields are the part that can actually cost money, so they get
+  // their own block rather than being folded into the summary above. The domain
+  // check says nothing about them.
+  if (result.fields?.length) {
+    parts.push(`<h3 class="subhead">what this signature authorises</h3>`);
+    parts.push(
+      `<div class="fields">` +
+        result.fields
+          .map(
+            (f) =>
+              `<div class="kv"><span class="k">${escapeHtml(f.path)}</span>` +
+              `<span class="v mono${f.unlimited ? " unlimited" : ""}">${escapeHtml(f.value)}</span></div>`
+          )
+          .join("") +
+        `</div>`
+    );
+  }
+
   if (result.onchainMatch === true) {
-    parts.push(`<p><span class="pill ok">domain matches on-chain</span></p>`);
+    parts.push(`<p><span class="pill ok">domain is consistent on-chain</span></p>`);
+    parts.push(`<p class="caveat">${escapeHtml(CONSISTENCY_CAVEAT)}</p>`);
   } else if (result.onchainMatch === false) {
-    parts.push(`<p><span class="pill high">domain does NOT match on-chain</span></p>`);
+    parts.push(`<p><span class="pill high">domain does NOT match on-chain — the contract would reject this signature</span></p>`);
   }
 
   parts.push(`<ul class="findings">${result.findings.map(findingHtml).join("")}</ul></div>`);
