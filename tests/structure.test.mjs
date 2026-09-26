@@ -67,6 +67,23 @@ test("Test hands the request to Check rather than to a second page", () => {
   assert.doesNotMatch(index, /\.\/sign/);
 });
 
+test("an ERC-5267 contract checks with the address alone", () => {
+  // The question that prompted this: do you need the name, or just the CA?
+  // Modern contracts publish their domain, so the address is enough.
+  const learnOrCheck = index.indexOf('id="view-check"');
+  const addrPos = index.indexOf('id="address"');
+  assert.ok(addrPos > learnOrCheck);
+  assert.match(index, /Just paste the address and press Inspect/i);
+  // Name/version must read as conditional, not required.
+  assert.match(index, /only if asked for/i);
+});
+
+test("a contract that cannot be verified says where the name comes from", () => {
+  // "Cannot verify" with no next step is a dead end.
+  assert.match(appJs, /predates ERC-5267/);
+  assert.match(appJs, /name\(\)<\/code> on the token/);
+});
+
 test("the RPC field is pastable but tucked away, and still validates", () => {
   // It was liked, then hidden too well, then hoisted above the tool. It belongs
   // in the Check view, available, below the thing people came to use.

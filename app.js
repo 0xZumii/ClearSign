@@ -380,6 +380,18 @@ function renderContract(result) {
     </div>`);
   }
   parts.push(`<ul class="findings">${result.findings.map(findingHtml).join("")}</ul>`);
+
+  // When the check stops for want of a name, say where to get it. "Cannot
+  // verify" with no next step reads as a dead end, and the answer is usually a
+  // single extra call the user can make themselves.
+  if (result.status === "unverified") {
+    parts.push(
+      `<p class="caveat">This contract predates ERC-5267, so it publishes no ` +
+        `name to check against. You can usually find the exact string it was ` +
+        `deployed with by calling <code>name()</code> on the token, or from the ` +
+        `project's own docs — then paste it above and Inspect again.</p>`
+    );
+  }
   if (result.status === "ok") parts.push(`<p class="caveat">${escapeHtml(CONSISTENCY_CAVEAT)}</p>`);
   parts.push(`</div>`);
   return parts.join("");

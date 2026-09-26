@@ -72,15 +72,24 @@ No request handy? Use the Learn tab to see real examples.'></textarea>
       <p class="hint">
         Checks whether a contract's signing domain actually works — the failure
         where a typo in the domain makes every signature it receives invalid.
-        Tokens like USDC and DAI expose no name on-chain, so supplying the one
-        they were deployed with is what lets them be checked.
+        <strong>Just paste the address and press Inspect.</strong> Modern
+        contracts publish their domain, so nothing else is needed.
       </p>
       <div class="row">
         <input id="address" type="text" spellcheck="false"
                placeholder="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" />
-        <input id="exp-name" type="text" placeholder="name, e.g. USD Coin" spellcheck="false" />
-        <input id="exp-version" type="text" placeholder="version, e.g. 2" spellcheck="false" />
         <button id="inspect" type="button" class="secondary">Inspect</button>
+      </div>
+      <p class="hint">
+        Older tokens (USDC, DAI) expose their separator but publish no name, so
+        there is nothing on-chain to compare against. If Inspect says
+        <em>cannot verify</em>, add the name and version the token was deployed
+        with — then it can be checked. A wrong name shows up as a mismatch,
+        which is itself the answer.
+      </p>
+      <div class="row">
+        <input id="exp-name" type="text" placeholder="name (only if asked for), e.g. USD Coin" spellcheck="false" />
+        <input id="exp-version" type="text" placeholder="version (only if asked for), e.g. 2" spellcheck="false" />
       </div>
       <output id="contract-out" class="out" aria-live="polite"></output>
     </details>
