@@ -1,7 +1,7 @@
 # Keeps Jekyll from processing the app directory.
 
 # Without this, GitHub Pages would run the site through Jekyll, which has a
-# habit of rewriting or refusing to serve files it does not recognise. The whole
+# habit of rewriting or refusing to serve files it does not recognize. The whole
 # app is native ES modules and plain CSS with nothing to build, so Jekyll adds
 # risk and no value. Deleting this file can break the deployment in ways that
 # look like "scripts do not load".

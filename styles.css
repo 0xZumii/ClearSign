@@ -320,7 +320,7 @@ button.secondary { background: #1b2230; color: var(--text); font-weight: 600; }
 }
 .fields { background: #0d1117; border-radius: 8px; padding: 0.5rem 0.8rem; }
 /* An unlimited allowance is the single most costly thing on the page; it gets
-   colour so it cannot be skimmed past. */
+   color so it cannot be skimmed past. */
 .unlimited { color: var(--high); font-weight: 700; }
 
 .spender {

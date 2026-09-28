@@ -60,7 +60,7 @@ function harmlessMessage(chainId, verifyingContract) {
     },
     primaryType: "Mail",
     domain: { name: "ClearSign example", version: "1", chainId, verifyingContract },
-    message: { contents: "this signature authorises nothing" },
+    message: { contents: "this signature authorizes nothing" },
   };
 }
 
@@ -291,7 +291,7 @@ const CONSISTENCY_CAVEAT =
   "This means the contract and a wallet agree on the domain they hash. " +
   "It does NOT mean the contract is trustworthy. A malicious contract that " +
   "asks for an unlimited approval will pass this check — the signature is " +
-  "still valid, and it is still a drain. Read the message fields, not the colour.";
+  "still valid, and it is still a drain. Read the message fields, not the color.";
 
 function findingHtml(f) {
   return `<li class="finding"><span class="level ${f.level}">${f.level}</span>${escapeHtml(f.message)}</li>`;
@@ -346,7 +346,7 @@ function renderPayload(result) {
   }
 
   if (result.fields?.length) {
-    parts.push(`<h3 class="subhead">what this signature authorises</h3>`);
+    parts.push(`<h3 class="subhead">what this signature authorizes</h3>`);
     parts.push(
       `<div class="fields">` +
         result.fields
@@ -682,7 +682,7 @@ $("sign").addEventListener("click", async () => {
     out.innerHTML = `<div class="card">
       <p><span class="pill ok">signed</span> — nothing was sent on-chain.</p>
       <div class="kv"><span class="k">signature</span><span class="v mono">${escapeHtml(signature)}</span></div>
-      <p class="hint">Your wallet showed a summary, not this JSON. Use <strong>Check it →</strong> to see what it authorised.</p>
+      <p class="hint">Your wallet showed a summary, not this JSON. Use <strong>Check it →</strong> to see what it authorized.</p>
     </div>`;
     $("signature").value = signature;
   } catch (error) {

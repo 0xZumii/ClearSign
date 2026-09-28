@@ -163,7 +163,7 @@ Pages, Netlify, an S3 bucket.
 For GitHub Pages: push, then **Settings → Pages → Deploy from a branch →
 `main` / `/ (root)`**. `.nojekyll` is committed, which stops Jekyll from
 processing the directory; without it, Pages has a habit of rewriting or refusing
-to serve files it does not recognise, and the symptom looks like "the scripts
+to serve files it does not recognize, and the symptom looks like "the scripts
 do not load".
 
 Pages deploys the **repository root**, so `index.html` must stay there — it is

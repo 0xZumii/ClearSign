@@ -93,7 +93,7 @@ test("payload domain is compared against the verifying contract", { skip: !reach
   const result = await inspectPayload(rpc, payload, { checkOnchain: true });
   assert.ok(result.digest?.startsWith("0x"));
   assert.equal(result.onchainMatch, true);
-  // A Permit is an authorisation, so it is high-risk by TYPE even with a finite
+  // A Permit is an authorization, so it is high-risk by TYPE even with a finite
   // value. The domain is consistent, which is a separate fact. Both are true,
   // and the tool must say so rather than letting the consistent domain imply
   // the payload is harmless.

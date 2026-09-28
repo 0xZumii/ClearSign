@@ -168,7 +168,7 @@ test("the Learn tab leads with three answers, not a wall", () => {
   // answers first; depth is available but collapsed.
   assert.match(index, /The three answers/i);
   assert.match(index, /Will the contract accept it\?/i);
-  assert.match(index, /What does it authorise\?/i);
+  assert.match(index, /What does it authorize\?/i);
   assert.match(index, /Can it be used against you later\?/i);
 });
 
@@ -242,14 +242,14 @@ test("the page says plainly what it cannot do", () => {
 
 // --- carried over from the retired sign.html/sign.js suites ------------------
 // The Test view replaced a separate trigger page. The guarantees those suites
-// held are about behaviour, not about a filename, so they move here.
+// held are about behavior, not about a filename, so they move here.
 
 test("the Test view states what signing does and does not do, before any wallet use", () => {
   const testStart = index.indexOf('id="view-test"');
   const connectPos = index.indexOf('id="connect"');
   const caveatPos = index.indexOf("Nothing here moves funds");
   assert.ok(caveatPos > testStart && caveatPos < connectPos, "the caveat precedes the wallet button");
-  assert.match(index, /signature\s+<em>is<\/em>\s+authorisation/i);
+  assert.match(index, /signature\s+<em>is<\/em>\s+authorization/i);
   assert.match(index, /example contracts/i);
   // And why the view exists: real dapps gate the signing step.
   assert.match(index, /gate the signing step behind eligibility/i);

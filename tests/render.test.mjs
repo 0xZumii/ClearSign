@@ -269,20 +269,20 @@ test("an unlimited Permit is flagged even though its domain is consistent", asyn
     checkOnchain: true,
   });
   assert.match(text, /UNLIMITED/);
-  assert.match(text, /authorisation, not a payment/i);
+  assert.match(text, /authorization, not a payment/i);
   // ...and it must not fall through to the reassuring message.
   assert.doesNotMatch(text, /No domain mismatch and no drain-shaped fields/i);
 });
 
-test("a drain payload shows the fields it authorises", async () => {
+test("a drain payload shows the fields it authorizes", async () => {
   const text = await renderPayload(DRAIN_PAYLOAD);
-  assert.match(text, /what this signature authorises/i);
+  assert.match(text, /what this signature authorizes/i);
   assert.match(text, /value/);
   assert.match(text, /spender/);
 });
 
 test("bootstrapping the generator address stays out of the payload path", async () => {
-  // A plain, harmless payload: no unlimited value, no authorisation type.
+  // A plain, harmless payload: no unlimited value, no authorization type.
   const benign = {
     types: {
       EIP712Domain: [{ name: "name", type: "string" }],
@@ -416,7 +416,7 @@ test("a finite future deadline is dated, not treated as unlimited", async () => 
   assert.doesNotMatch(text, /never \(deadline/i);
 });
 
-test("liveness is skipped when the payload is not an authorisation type", async () => {
+test("liveness is skipped when the payload is not an authorization type", async () => {
   const benign = {
     types: { EIP712Domain: [{ name: "name", type: "string" }], Mail: [{ name: "contents", type: "string" }] },
     primaryType: "Mail",
@@ -439,7 +439,7 @@ test("a never-expiring deadline is not misread as an unlimited spend", async () 
   assert.match(text, /UNLIMITED at 'value'/i);
 });
 
-test("an unlimited field is recognised by name, not by magnitude alone", async () => {
+test("an unlimited field is recognized by name, not by magnitude alone", async () => {
   const payload = JSON.parse(JSON.stringify(DRAIN_PAYLOAD));
   payload.types.Permit.push({ name: "expiry", type: "uint256" });
   payload.message.expiry = (2n ** 256n - 1n).toString();
